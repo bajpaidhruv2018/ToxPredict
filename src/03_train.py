@@ -45,8 +45,11 @@ basic_cols = [
 fp_cols  = [f'FP_{i}' for i in range(1024)]
 tox_cols = [c for c in df_train.columns if c.startswith('tox_')]
 
+# Pick up any Surrogate_* columns (e.g. Surrogate_QED from ZINC engine)
+surrogate_cols = [c for c in df_train.columns if c.startswith('Surrogate_')]
+
 # Use all features combined
-feature_cols = basic_cols + fp_cols + tox_cols
+feature_cols = basic_cols + fp_cols + tox_cols + surrogate_cols
 feature_cols = [c for c in feature_cols if c in df_train.columns]
 
 print(f"✅ Total features being used: {len(feature_cols)}")
