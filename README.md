@@ -121,6 +121,12 @@ Detects 10 known toxic substructures in real time:
 - Azo compounds → Metabolic activation
 - Peroxides → Oxidative damage
 
+### 🛑 Applicability Domain (AD) Monitoring
+AI models are notoriously bad at extrapolating outside their training data. ToxPredict includes a real-time **Out-of-Distribution (OOD)** safeguard:
+- We precompute Morgan fingerprints for all 6,942 training molecules.
+- When you input a novel drug, we calculate its **BulkTanimotoSimilarity** against the entire training set.
+- If the nearest-neighbor similarity falls below 40%, the UI displays a prominent warning that the model is extrapolating and predictions may be less reliable.
+
 ### 🌐 Multi-Source Drug Lookup
 Any drug name → SMILES via 3-API fallback chain:
 ```
@@ -376,6 +382,7 @@ From molecular properties → estimate:
 | Data split | Random split (leaky) | **Scaffold split (zero leakage)** |
 | Feature count | 9 descriptors | **1033+ (Morgan FP + toxicophores)** |
 | Model type | Single XGBoost | **Ensemble of 3 models** |
+| Applicability | Silent OOD failure | **Tanimoto nearest-neighbor AD check** |
 | Drug input | SMILES only | **Drug name OR SMILES** |
 | Molecule view | 2D image | **Interactive 3D rotation** |
 | Explainability | Basic importance | **SHAP + toxicophore alerts** |
