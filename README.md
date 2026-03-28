@@ -175,24 +175,26 @@ Local Database (50+ drugs)
 
 > **Evaluated using Scaffold Splitting** — all molecules sharing the same Murcko scaffold are strictly in either the train or test set, never both. This eliminates data leakage from structurally similar molecules and provides scientifically honest metrics.
 
-| Assay | Biological Target | ROC-AUC | F1 Score |
-|---|---|---|---|
-| **NR-AR-LBD** | Androgen receptor (binding) | **0.9480** | 0.8333 |
-| **SR-MMP** | Mitochondrial membrane potential | **0.8802** | 0.6127 |
-| **NR-AhR** | Aryl hydrocarbon receptor | **0.8587** | 0.4790 |
-| **NR-ER-LBD** | Estrogen receptor (binding) | **0.8536** | 0.5645 |
-| **NR-AR** | Androgen receptor (full) | **0.8512** | 0.6358 |
-| **SR-ATAD5** | DNA damage/replication stress | **0.8142** | 0.2927 |
-| **NR-PPAR-gamma** | Metabolic disruption | **0.7883** | 0.2051 |
-| **NR-Aromatase** | Estrogen synthesis enzyme | **0.7872** | 0.3404 |
-| **NR-ER** | Estrogen receptor (full) | **0.7731** | 0.4916 |
-| **SR-ARE** | Oxidative stress response | **0.7384** | 0.4451 |
-| **SR-HSE** | Heat shock / stress response | **0.7205** | 0.2453 |
-| **SR-p53** | DNA damage response | **0.7183** | 0.2123 |
+| Assay | Biological Target | Ensemble ROC-AUC | Ensemble F1 | Multi-Task MLP AUC |
+|---|---|---|---|---|
+| **NR-AR-LBD** | Androgen receptor (binding) | **0.9480** | 0.8333 | **0.9514** |
+| **SR-MMP** | Mitochondrial membrane potential | **0.8802** | 0.6127 | 0.8466 |
+| **NR-AhR** | Aryl hydrocarbon receptor | **0.8587** | 0.4790 | 0.8392 |
+| **NR-ER-LBD** | Estrogen receptor (binding) | **0.8536** | 0.5645 | 0.8360 |
+| **NR-AR** | Androgen receptor (full) | **0.8512** | 0.6358 | **0.8649** |
+| **SR-ATAD5** | DNA damage/replication stress | **0.8142** | 0.2927 | 0.7668 |
+| **NR-PPAR-gamma** | Metabolic disruption | **0.7883** | 0.2051 | 0.6993 |
+| **NR-Aromatase** | Estrogen synthesis enzyme | **0.7872** | 0.3404 | **0.8196** |
+| **NR-ER** | Estrogen receptor (full) | **0.7731** | 0.4916 | 0.7381 |
+| **SR-ARE** | Oxidative stress response | **0.7384** | 0.4451 | **0.7805** |
+| **SR-HSE** | Heat shock / stress response | **0.7205** | 0.2453 | **0.7645** |
+| **SR-p53** | DNA damage response | **0.7183** | 0.2123 | **0.7239** |
 
 **✅ 8 out of 12 targets exceed the 0.75 industry benchmark threshold (with scaffold split)**
 
-**📈 Best AUC: 0.9480 (NR-AR-LBD) — achieved with rigorous scaffold-based evaluation**
+**📈 Best Ensemble AUC: 0.9480 (NR-AR-LBD)**
+**📈 Best Multi-Task MLP AUC: 0.9514 (NR-AR-LBD) — achieved with rigorous scaffold-based evaluation**
+**📊 Mean Multi-Task MLP AUC: 0.8026**
 
 ### Class Imbalance Handling
 The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds). We address this via:
