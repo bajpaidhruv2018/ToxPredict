@@ -8,6 +8,7 @@
 
 import pandas as pd
 import numpy as np
+import pickle
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdMolDescriptors, AllChem, MolFromSmarts
 import os
@@ -88,10 +89,13 @@ def detect_toxicophores(smiles):
 # PROCESS A SINGLE SPLIT
 # ────────────────────────────────────────────
 
-def process_split(input_path: str, output_path: str, split_name: str):
+def process_split(input_path: str, output_path: str, split_name: str,
+                  save_rdkit_fps: bool = False):
     """
     Load a scaffold-split CSV, compute all features,
     and save the processed result.
+    If save_rdkit_fps=True, also saves RDKit fingerprint
+    objects for Applicability Domain checks.
     """
     print(f"\n{'=' * 60}")
     print(f"PROCESSING {split_name.upper()} SPLIT")
@@ -120,15 +124,31 @@ def process_split(input_path: str, output_path: str, split_name: str):
     # --- Morgan fingerprints ---
     print(f"\n  Extracting Morgan fingerprints...")
     fp_list = []
+    rdkit_fp_list = []  # Native RDKit objects for Tanimoto similarity
     for i, smiles in enumerate(df['smiles']):
         fp = get_morgan_fp(smiles)
         if fp is None:
             fp = np.zeros(1024)
+            rdkit_fp_list.append(None)
+        else:
+            # Keep the native RDKit bit vector for BulkTanimotoSimilarity
+            mol = Chem.MolFromSmiles(smiles)
+            rdkit_fp_list.append(
+                AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=1024)
+            )
         fp_list.append(fp)
         if i % 2000 == 0:
             print(f"    Progress: {i}/{len(df)}")
     fp_df = pd.DataFrame(fp_list, columns=[f'FP_{i}' for i in range(1024)])
     print(f"  ✅ Morgan fingerprints — {fp_df.shape[1]} features")
+
+    # Save native RDKit fingerprints for Applicability Domain (train only)
+    if save_rdkit_fps:
+        valid_fps = [fp for fp in rdkit_fp_list if fp is not None]
+        fp_path = 'results/train_fingerprints.pkl'
+        with open(fp_path, 'wb') as f:
+            pickle.dump(valid_fps, f)
+        print(f"  ✅ Saved {len(valid_fps)} RDKit fingerprints to {fp_path}")
 
     # --- Toxicophores ---
     print(f"\n  Detecting toxicophores...")
@@ -167,9 +187,10 @@ print("STEP 2: FEATURE EXTRACTION (SCAFFOLD-SPLIT)")
 print("=" * 60)
 
 train_df = process_split(
-    input_path  = 'data/tox21_train_scaffold.csv',
-    output_path = 'data/tox21_train_processed.csv',
-    split_name  = 'train'
+    input_path    = 'data/tox21_train_scaffold.csv',
+    output_path   = 'data/tox21_train_processed.csv',
+    split_name    = 'train',
+    save_rdkit_fps = True   # Save fingerprints for Applicability Domain
 )
 
 test_df = process_split(

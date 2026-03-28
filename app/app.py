@@ -169,8 +169,20 @@ def load_models():
 def load_original_data():
     return pd.read_csv('data/tox21.csv')
 
+@st.cache_resource
+def load_train_fingerprints():
+    """Load pre-computed training set RDKit fingerprints for AD checks."""
+    try:
+        with open('results/train_fingerprints.pkl', 'rb') as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        st.warning("⚠️ Training fingerprints not found. Run 02_features.py first.")
+        return None
+
+
 models      = load_models()
 df_original = load_original_data()
+train_fps   = load_train_fingerprints()
 
 # ============================================
 # HELPER FUNCTIONS
@@ -350,6 +362,34 @@ def find_similar(query_mol, df, top_n=5):
     return sims[1:top_n+1]
 
 
+def check_applicability_domain(smiles, train_fps, threshold=0.4):
+    """
+    Check if a molecule falls within the Applicability Domain
+    of the training set using Tanimoto nearest-neighbor similarity.
+
+    Returns (in_domain: bool, max_similarity: float or None).
+    """
+    if train_fps is None:
+        return True, None  # Graceful fallback if fingerprints unavailable
+
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return True, None
+
+        query_fp = AllChem.GetMorganFingerprintAsBitVect(
+            mol, radius=2, nBits=1024
+        )
+
+        # BulkTanimotoSimilarity is C++ optimized — handles thousands fast
+        similarities = DataStructs.BulkTanimotoSimilarity(query_fp, train_fps)
+        max_sim = max(similarities) if similarities else 0.0
+
+        return (max_sim >= threshold), max_sim
+    except Exception:
+        return True, None  # Don't block predictions on AD errors
+
+
 def run_prediction(smiles_input, models):
     feat_cols = models[list(models.keys())[0]]['feature_cols']
     result    = get_features(smiles_input, feat_cols)
@@ -359,6 +399,21 @@ def run_prediction(smiles_input, models):
         return
 
     row, mol, basic_props, tox_flags = result
+
+    # ---- Applicability Domain Check ----
+    ad_in_domain, ad_similarity = check_applicability_domain(
+        smiles_input, train_fps, threshold=0.4
+    )
+
+    if ad_similarity is not None:
+        if not ad_in_domain:
+            st.warning(
+                f"⚠️ **Out of Applicability Domain:** This molecule is highly "
+                f"dissimilar to our training data (Nearest Neighbor Similarity: "
+                f"**{ad_similarity:.1%}** < 40%). The model is extrapolating. "
+                f"Predictions may be less reliable."
+            )
+        st.info(f"🔬 **Nearest Neighbor Similarity:** {ad_similarity:.1%}")
 
     # ---- Layout ----
     col1, col2 = st.columns([1, 2])
