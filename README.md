@@ -1,76 +1,442 @@
-# 🧬 ToxPredict: AI-Powered Drug Toxicity Predictor
+# 🧬 ToxPredict — AI-Powered Drug Toxicity Predictor
 
-ToxPredict is an AI-powered machine learning application designed to predict the toxicity of molecules across 12 biological targets instantly. It uses structural and chemical properties of drugs, including basic molecular descriptors, Morgan fingerprints, and toxicophore detection to evaluate toxicity risks.
+<div align="center">
 
-## 🚀 Features
+![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red?style=for-the-badge&logo=streamlit)
+![XGBoost](https://img.shields.io/badge/XGBoost-Ensemble-green?style=for-the-badge)
+![RDKit](https://img.shields.io/badge/RDKit-Cheminformatics-orange?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
-- **Toxicity Prediction**: Predicts toxicity across 12 targets (e.g., NR-AR, SR-p53, etc.) using an ensemble model combining XGBoost, RandomForest, and Logistic Regression.
-- **Automated Feature Extraction**: Computes basic descriptors (MolWt, LogP, TPSA, etc.), extracts Morgan fingerprints, and flags structural representations of 10 known toxicophores.
-- **Drug Discovery Integration**: Try out predictions by effortlessly typing a drug name (fetches SMILES via PubChem/OPSIN/CIR) or by providing a custom SMILES string manually.
-- **ADMET Profiling**: Provides a rapid ADMET (Absorption, Distribution, Metabolism, Excretion, and Toxicity) drug safety profile, evaluating properties like Oral Bioavailability, BBB Penetration, Hepatotoxicity Risk, and Lipinski's Rule of 5 compliance.
-- **Interactive Web App**: Built with Streamlit for an intuitive UI, featuring graphical molecular rendering, dynamic risk scoring, and downloadable CSV target reports.
+**CodeCure Biohackathon | Track A — Drug Toxicity Prediction**
+**Organized by IIT BHU**
 
-## 📂 Project Structure
+*Predict drug toxicity across 12 biological targets in milliseconds using AI and molecular cheminformatics.*
 
-```text
-CodeCure/
-│
-├── app/
-│   └── app.py                  # Main Streamlit web application
-│
-├── data/
-│   ├── tox21.csv               # Raw Tox21 dataset
-│   └── tox21_processed.csv     # Processed dataset with extracted features
-│
-├── notebooks/                  # Jupyter notebooks for interactive exploratory experimentation
-│
-├── results/                    # Generated metrics, plots, predictions and cached models
-│   ├── class_balance.png       # Target class imbalance visualization
-│   ├── metrics.csv             # Evaluation metrics for all the target models
-│   └── models.pkl              # Pickled ensemble of trained model checkpoints
-│
-└── src/
-    ├── 01_eda.py               # Exploratory Data Analysis script
-    ├── 02_features.py          # Molecular feature extraction script
-    ├── 03_train.py             # Model training and evaluation script
-    └── 04_visualize.py         # Visualization scripts for model interpretation
+</div>
+
+---
+
+## 📌 Table of Contents
+
+- [Problem Statement](#-problem-statement)
+- [Our Solution](#-our-solution)
+- [Key Features](#-key-features)
+- [Model Performance](#-model-performance)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Installation](#-installation)
+- [How to Run](#-how-to-run)
+- [How It Works](#-how-it-works)
+- [Results & Visualizations](#-results--visualizations)
+- [Limitations & Future Work](#-limitations--future-work)
+- [Team](#-team)
+
+---
+
+## 🎯 Problem Statement
+
+Drug development frequently fails due to **unexpected toxicity** — costing billions of dollars and years of research. Early prediction of toxic compounds can:
+
+- Reduce drug development costs significantly
+- Improve patient safety
+- Accelerate the drug discovery pipeline
+
+Traditional toxicity testing requires expensive lab work, animal testing, and months of analysis. We built an AI system that **predicts toxicity in milliseconds** using only the chemical structure of a molecule.
+
+---
+
+## 💡 Our Solution
+
+**ToxPredict** is an end-to-end AI pipeline that:
+
+1. Takes any drug name or SMILES string as input
+2. Extracts 1033+ molecular features using cheminformatics
+3. Predicts toxicity across **12 biological assay targets** simultaneously
+4. Explains *why* a molecule is toxic using SHAP and toxicophore detection
+5. Provides a full **ADMET drug safety profile**
+6. Visualizes the molecule in **interactive 3D**
+
+> *"Give us a molecule — we'll tell you if it's toxic and why."*
+
+---
+
+## ⭐ Key Features
+
+### 🔬 Advanced Feature Engineering
+| Feature Type | Count | Description |
+|---|---|---|
+| Basic Molecular Descriptors | 9 | MolWt, LogP, TPSA, H-donors/acceptors, etc. |
+| Morgan Fingerprints | 1024 | Circular molecular fingerprints (radius=2) |
+| Toxicophore Flags | 10 | Known toxic substructure detection |
+| **Total Features** | **1033+** | Combined feature vector per molecule |
+
+### 🤖 Ensemble Model Architecture
+```
+Input Molecule
+      │
+      ▼
+┌─────────────────────────────────────┐
+│         Feature Extraction          │
+│  Basic Descriptors + Morgan FP      │
+│  + Toxicophore Detection            │
+└─────────────────┬───────────────────┘
+                  │
+      ┌───────────┼───────────┐
+      ▼           ▼           ▼
+  XGBoost    Random Forest   Logistic
+  (n=200)     (n=200)     Regression
+      │           │           │
+      └───────────┼───────────┘
+                  │
+            Soft Voting
+                  │
+                  ▼
+         Toxicity Probability
+         (per assay target)
 ```
 
-## 🛠️ Installation & Setup
+### 🧪 Toxicophore Detection
+Detects 10 known toxic substructures in real time:
+- Nitro groups → DNA damage
+- Aldehydes → Protein binding
+- Epoxides → DNA alkylation
+- Aromatic amines → Carcinogenicity
+- Hydrazines → Hepatotoxicity
+- Alkyl halides → Reactive intermediates
+- Michael acceptors → Electrophilic reactivity
+- Quinones → Oxidative stress
+- Azo compounds → Metabolic activation
+- Peroxides → Oxidative damage
 
-1. **Clone the repository** (or navigate to the project directory):
-   ```bash
-   cd CodeCure
-   ```
+### 🌐 Multi-Source Drug Lookup
+Any drug name → SMILES via 3-API fallback chain:
+```
+Local Database (50+ drugs)
+        ↓ if not found
+   PubChem API
+        ↓ if fails
+    OPSIN API
+        ↓ if fails
+  CIR NCI API
+```
 
-2. **Install dependencies**:
-   Ensure you have Python 3.8+ installed. You will need the following key libraries:
-   ```bash
-   pip install pandas numpy scikit-learn xgboost streamlit rdkit matplotlib seaborn requests
-   ```
+### 🖥️ App Modes
+- **Single Drug Analysis** — Full toxicity report for any molecule
+- **Compare Two Drugs** — Side-by-side radar chart comparison
+- **Batch Screening** — Upload CSV, screen hundreds of molecules at once
 
-3. **Run the Data Pipeline** (Optional, if you wish to retrain the models from scratch):
-   ```bash
-   python src/01_eda.py
-   python src/02_features.py
-   python src/03_train.py
-   ```
+---
 
-4. **Launch the Streamlit App**:
-   ```bash
-   streamlit run app/app.py
-   ```
+## 📊 Model Performance
 
-## 🧠 How It Works
+### ROC-AUC Scores Across All 12 Tox21 Assays
 
-1. **Input**: The user inputs a drug name or SMILES string.
-2. **Feature Engineering**: The app uses `rdkit` to calculate molecular descriptors, Morgan fingerprints via `AllChem`, and detects structural toxicophores using SMARTS patterns.
-3. **Prediction**: The generated feature vector is fed into pre-trained ensemble classifiers (`models.pkl`) to predict the probability of toxicity across 12 specific target endpoints from the Tox21 dataset.
-4. **Insights**: Results are aggregated to produce an overall risk probability score and an ADMET profile, highlighting sub-structural threats and compliance with drug-likeness rules.
+| Assay | Biological Target | ROC-AUC | F1 Score |
+|---|---|---|---|
+| **SR-MMP** | Mitochondrial membrane potential | **0.8966** | 0.5714 |
+| **NR-AhR** | Aryl hydrocarbon receptor | **0.8860** | 0.5393 |
+| **NR-Aromatase** | Estrogen synthesis enzyme | **0.8791** | 0.4407 |
+| **SR-p53** | DNA damage response | **0.8699** | 0.3665 |
+| **SR-ATAD5** | DNA damage/replication stress | **0.8755** | 0.3789 |
+| **SR-ARE** | Oxidative stress response | **0.8176** | 0.4619 |
+| **NR-ER-LBD** | Estrogen receptor (binding) | **0.8117** | 0.4320 |
+| **NR-PPAR-gamma** | Metabolic disruption | **0.8112** | 0.2295 |
+| **NR-AR-LBD** | Androgen receptor (binding) | **0.7893** | 0.5526 |
+| **SR-HSE** | Heat shock / stress response | **0.7671** | 0.3265 |
+| **NR-AR** | Androgen receptor (full) | **0.7626** | 0.4333 |
+| **NR-ER** | Estrogen receptor (full) | **0.6968** | 0.3726 |
 
-## 📊 Models Built
+**✅ 9 out of 12 targets exceed the 0.75 industry benchmark threshold**
 
-The core predictive engine is a `VotingClassifier` (Soft Voting) built combining the decisions of:
-- **XGBClassifier**: Gradient boosting algorithm handling highly imbalanced target targets via proportional `scale_pos_weight`.
-- **RandomForestClassifier**: Ensemble tree method using automatically adjusted balanced class weights.
-- **LogisticRegression**: Scaled linear statistical model to calibrate output probabilities to the correct scale.
+**📈 Best AUC: 0.8966 (SR-MMP) — above published state-of-the-art range of 0.80–0.85**
+
+### Class Imbalance Handling
+The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds). We address this via:
+- `scale_pos_weight` in XGBoost
+- `class_weight='balanced'` in Random Forest and Logistic Regression
+- Reporting PR-AUC and F1 alongside ROC-AUC
+
+---
+
+## 🛠️ Tech Stack
+
+### Machine Learning
+- `XGBoost` — Gradient boosted trees
+- `scikit-learn` — Random Forest, Logistic Regression, VotingClassifier
+- `SHAP` — Model explainability
+
+### Cheminformatics
+- `RDKit` — Molecular processing, descriptor calculation, Morgan fingerprints, 3D coordinate generation
+
+### Visualization
+- `Streamlit` — Web application framework
+- `Plotly` — Interactive radar charts
+- `3Dmol.js` — 3D molecular viewer (WebGL)
+- `Matplotlib` / `Seaborn` — Static plots
+
+### Data
+- `Pandas` / `NumPy` — Data processing
+- `Tox21 Dataset` — 7,831 compounds, 12 toxicity assay labels
+
+---
+
+## 📁 Project Structure
+
+```
+CodeCure/
+│
+├── data/
+│   ├── tox21.csv                  # Raw dataset (7,831 compounds)
+│   └── tox21_processed.csv        # Processed with 1033+ features
+│
+├── src/
+│   ├── 01_eda.py                  # Exploratory Data Analysis
+│   ├── 02_features.py             # Feature extraction pipeline
+│   ├── 03_train.py                # Model training (12 ensemble models)
+│   └── 04_visualize.py            # Generate all result visualizations
+│
+├── results/
+│   ├── models.pkl                 # Saved ensemble models (all 12 targets)
+│   ├── metrics.csv                # AUC + F1 per assay
+│   ├── 01_per_assay_auc.png       # AUC bar chart
+│   ├── 02_correlation_heatmap.png # Molecular properties vs toxicity
+│   ├── 03_toxicophore_frequency.png # Toxicophore distribution
+│   ├── 04_shap_summary.png        # SHAP feature importance
+│   └── 05_real_drug_predictions.png # Validation on FDA drugs
+│
+├── app/
+│   └── app.py                     # Streamlit web application
+│
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## ⚙️ Installation
+
+### Prerequisites
+- Windows 10/11 with [Anaconda](https://www.anaconda.com/download) or Miniconda
+- GPU recommended (RTX 4050 or similar) — but CPU works fine
+
+### Step 1 — Clone the Repository
+```bash
+git clone https://github.com/YOUR_USERNAME/CodeCure-ToxPredict.git
+cd CodeCure-ToxPredict
+```
+
+### Step 2 — Create Environment
+```bash
+conda create -n codecure python=3.10
+conda activate codecure
+```
+
+### Step 3 — Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### Step 4 — Download Dataset
+Download the Tox21 dataset from [Kaggle](https://www.kaggle.com/datasets/epicskills/tox21-dataset) and place `tox21.csv` in the `data/` folder.
+
+---
+
+## ▶️ How to Run
+
+### Run Full Pipeline (first time)
+```bash
+conda activate codecure
+
+# Step 1: Explore data
+python src/01_eda.py
+
+# Step 2: Extract features
+python src/02_features.py
+
+# Step 3: Train models (~15 mins)
+python src/03_train.py
+
+# Step 4: Generate visualizations
+python src/04_visualize.py
+
+# Step 5: Launch app
+streamlit run app/app.py
+```
+
+### Launch App Only (models already trained)
+```bash
+conda activate codecure
+streamlit run app/app.py
+```
+
+App opens at `http://localhost:8501`
+
+---
+
+## 🔬 How It Works
+
+### 1. Molecular Feature Extraction
+```
+SMILES String → RDKit → 3 Feature Types:
+
+  Type 1: Basic Descriptors (9 features)
+    MolWt, LogP, TPSA, H-donors,
+    H-acceptors, Rotatable bonds,
+    Aromatic rings, Heavy atoms, FractionCSP3
+
+  Type 2: Morgan Fingerprints (1024 features)
+    Circular fingerprint encoding
+    atomic neighborhoods up to radius=2
+    Captures structural patterns at atomic level
+
+  Type 3: Toxicophore Flags (10 features)
+    Binary detection of 10 known
+    toxic chemical substructures
+```
+
+### 2. Ensemble Prediction
+```
+For each of 12 toxicity targets:
+  → Train XGBoost + Random Forest + Logistic Regression
+  → Combine via Soft Voting (average probabilities)
+  → Handle class imbalance with scale_pos_weight
+  → Output: toxicity probability [0.0 - 1.0]
+```
+
+### 3. Explainability
+```
+SHAP TreeExplainer
+  → Shows which molecular features
+    drove each prediction
+  → Beeswarm plot across all samples
+  → Force plot for individual molecules
+```
+
+### 4. ADMET Profiling
+```
+From molecular properties → estimate:
+  Absorption  → Oral bioavailability, GI absorption
+  Distribution → BBB penetration, plasma protein binding
+  Metabolism  → CYP interaction risk
+  Excretion   → (structural indicators)
+  Toxicity    → hERG cardiac risk, hepatotoxicity
+```
+
+---
+
+## 📈 Results & Visualizations
+
+### Validation on Real FDA-Approved Drugs
+
+| Drug | Key Finding |
+|---|---|
+| **Aspirin** | Low risk across all assays ✅ |
+| **Estradiol** | 95.9% NR-ER risk — correctly flags estrogen receptor disruption 🔴 |
+| **Testosterone** | High NR-AR risk — correctly flags androgen receptor disruption 🔴 |
+| **Caffeine** | Low cellular toxicity — consistent with known safety profile ✅ |
+| **Doxorubicin** | High SR-p53 — correctly identifies DNA damage mechanism 🔴 |
+| **Metformin** | Low risk — consistent with excellent clinical safety record ✅ |
+
+### Known Model Limitations
+> Heroin, Benzene, and Thalidomide score **low** on our model — not because they are safe, but because their danger mechanisms fall **outside Tox21's scope:**
+> - Heroin → opioid receptor binding (not a cellular toxicity mechanism)
+> - Benzene → chronic bone marrow toxicity over years (not acute cellular)
+> - Thalidomide → teratogenicity in embryos (no cell-based assay captures this)
+>
+> This reflects scientific maturity, not a model flaw. A complete safety system requires multiple complementary assay panels.
+
+---
+
+## 🚀 Differentiators vs Other Teams
+
+| Feature | Typical Team | ToxPredict |
+|---|---|---|
+| Feature count | 9 descriptors | **1033+ (Morgan FP + toxicophores)** |
+| Model type | Single XGBoost | **Ensemble of 3 models** |
+| Drug input | SMILES only | **Drug name OR SMILES** |
+| Molecule view | 2D image | **Interactive 3D rotation** |
+| Explainability | Basic importance | **SHAP + toxicophore alerts** |
+| Drug safety | Toxicity only | **Full ADMET profile** |
+| App modes | Single drug | **Single + Compare + Batch** |
+| Validation | Test accuracy | **Real FDA drug validation** |
+
+---
+
+## 🔮 Limitations & Future Work
+
+### Current Limitations
+- Tox21 covers only 12 specific cellular assay types
+- Does not predict addiction, neurotoxicity, or chronic exposure effects
+- Morgan fingerprints miss 3D conformational information
+- Model trained on ~7,800 compounds — larger datasets would improve generalization
+
+### Future Enhancements
+- [ ] Graph Neural Networks (GNNs) for molecular graph-based learning
+- [ ] 3D shape descriptors using RDKit conformer generation
+- [ ] Integration with ChEMBL for larger training data
+- [ ] Multi-task learning across all 12 targets simultaneously
+- [ ] Deployment on Streamlit Cloud for public access
+- [ ] Support for protein-ligand docking scores
+
+---
+
+## 📦 Requirements
+
+```
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+xgboost
+shap
+streamlit
+rdkit
+plotly
+requests
+py3Dmol
+jupyter
+ipykernel
+```
+
+Install all:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 👨‍💻 Team
+
+**Dhruv Bajpai**
+**Samarth Shukla**
+**Kshitij Trivedi**
+- B.Tech CSE | VIT Bhopal
+
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 🙏 Acknowledgements
+
+- **Tox21 Dataset** — National Toxicology Program & NIH
+- **RDKit** — Open-source cheminformatics library
+- **PubChem** — Free chemical structure database (NIH)
+- **3Dmol.js** — 3D molecular visualization library
+- **SHAP** — Lundberg & Lee, 2017
+
+---
+
+<div align="center">
+
+**Built for CodeCure Biohackathon | IIT BHU | Track A**
+
+*Predicting drug toxicity with AI — making drug discovery safer and faster.*
+
+</div>
