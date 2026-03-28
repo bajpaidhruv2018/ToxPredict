@@ -1,5 +1,10 @@
 # ============================================
-# STEP 3: TRAIN MODELS
+# STEP 3: TRAIN MODELS (SCAFFOLD-SPLIT)
+# ============================================
+# Uses pre-computed scaffold-split files to
+# completely eliminate data leakage.
+# No train_test_split needed — the split is done
+# upstream in 01b_scaffold_split.py.
 # ============================================
 
 import pandas as pd
@@ -9,7 +14,6 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, f1_score
 import pickle
 import warnings
@@ -18,12 +22,18 @@ import os
 
 os.makedirs('results', exist_ok=True)
 
-print("=" * 50)
-print("LOADING PROCESSED DATA")
-print("=" * 50)
+# ────────────────────────────────────────────
+# Load pre-split, pre-processed data
+# ────────────────────────────────────────────
+print("=" * 60)
+print("LOADING SCAFFOLD-SPLIT DATA")
+print("=" * 60)
 
-df = pd.read_csv('data/tox21_processed.csv')
-print(f"✅ Loaded data: {df.shape}")
+df_train = pd.read_csv('data/tox21_train_processed.csv')
+df_test  = pd.read_csv('data/tox21_test_processed.csv')
+
+print(f"✅ Train set: {df_train.shape}")
+print(f"✅ Test  set: {df_test.shape}")
 
 # Define feature columns
 basic_cols = [
@@ -33,11 +43,11 @@ basic_cols = [
 ]
 
 fp_cols  = [f'FP_{i}' for i in range(1024)]
-tox_cols = [c for c in df.columns if c.startswith('tox_')]
+tox_cols = [c for c in df_train.columns if c.startswith('tox_')]
 
 # Use all features combined
 feature_cols = basic_cols + fp_cols + tox_cols
-feature_cols = [c for c in feature_cols if c in df.columns]
+feature_cols = [c for c in feature_cols if c in df_train.columns]
 
 print(f"✅ Total features being used: {len(feature_cols)}")
 
@@ -47,12 +57,16 @@ tox_targets = [
     'NR-ER', 'NR-ER-LBD', 'NR-PPAR-gamma', 'SR-ARE',
     'SR-ATAD5', 'SR-HSE', 'SR-MMP', 'SR-p53'
 ]
-tox_targets = [t for t in tox_targets if t in df.columns]
+tox_targets = [t for t in tox_targets if t in df_train.columns]
 
 print(f"✅ Training for {len(tox_targets)} toxicity targets")
-print("\n" + "=" * 50)
-print("TRAINING MODELS")
-print("=" * 50)
+
+# ────────────────────────────────────────────
+# Train models (NO random split — already done)
+# ────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("TRAINING MODELS (SCAFFOLD-SPLIT EVALUATION)")
+print("=" * 60)
 
 results = {}
 models  = {}
@@ -60,22 +74,17 @@ models  = {}
 for target in tox_targets:
     print(f"\n  Training: {target}")
 
-    # Drop rows where target is missing
-    df_t = df[feature_cols + [target]].dropna()
+    # Drop rows where target is missing — independently in each split
+    train_t = df_train[feature_cols + [target]].dropna()
+    test_t  = df_test[feature_cols + [target]].dropna()
 
-    X = df_t[feature_cols]
-    y = df_t[target]
-
-    # Split into train and test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
-        test_size=0.2,
-        random_state=42,
-        stratify=y
-    )
+    X_train = train_t[feature_cols]
+    y_train = train_t[target]
+    X_test  = test_t[feature_cols]
+    y_test  = test_t[target]
 
     print(f"    Train size: {len(X_train)} | Test size: {len(X_test)}")
-    print(f"    Class ratio (imbalance): {(y_train==0).sum()}:{(y_train==1).sum()}")
+    print(f"    Train class ratio: {(y_train==0).sum()}:{(y_train==1).sum()}")
 
     # Handle class imbalance
     ratio = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
@@ -129,8 +138,8 @@ for target in tox_targets:
     f1  = f1_score(y_test, y_pred)
 
     results[target] = {
-        'ROC-AUC': round(auc, 4),
-        'F1':      round(f1, 4),
+        'ROC-AUC':    round(auc, 4),
+        'F1':         round(f1, 4),
         'Train_size': len(X_train),
         'Test_size':  len(X_test),
     }
@@ -141,10 +150,12 @@ for target in tox_targets:
 
     print(f"    ✅ AUC: {auc:.4f} | F1: {f1:.4f}")
 
-# Save everything
-print("\n" + "=" * 50)
+# ────────────────────────────────────────────
+# Save results
+# ────────────────────────────────────────────
+print("\n" + "=" * 60)
 print("SAVING RESULTS")
-print("=" * 50)
+print("=" * 60)
 
 with open('results/models.pkl', 'wb') as f:
     pickle.dump(models, f)
@@ -154,6 +165,6 @@ results_df = pd.DataFrame(results).T
 results_df.to_csv('results/metrics.csv')
 print("✅ Metrics saved to results/metrics.csv")
 
-print("\n📊 FINAL RESULTS:")
+print("\n📊 FINAL RESULTS (Scaffold-Split — No Leakage):")
 print(results_df.to_string())
 print("\n🎉 Training Complete!")

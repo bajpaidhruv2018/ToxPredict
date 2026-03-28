@@ -1,6 +1,10 @@
 # ============================================
 # STEP 2: EXTRACT MOLECULAR FEATURES
 # ============================================
+# Refactored to process scaffold-split files
+# independently (train and test are kept separate
+# to prevent any form of data leakage).
+# ============================================
 
 import pandas as pd
 import numpy as np
@@ -10,20 +14,12 @@ import os
 
 os.makedirs('results', exist_ok=True)
 
-print("=" * 50)
-print("LOADING DATASET")
-print("=" * 50)
-df = pd.read_csv('data/tox21.csv')
-print(f"✅ Loaded {len(df)} molecules")
-
-# ----------------------------------------
-# FEATURE 1: Basic Molecular Descriptors
-# ----------------------------------------
-print("\n" + "=" * 50)
-print("EXTRACTING BASIC DESCRIPTORS")
-print("=" * 50)
+# ────────────────────────────────────────────
+# FEATURE EXTRACTION FUNCTIONS
+# ────────────────────────────────────────────
 
 def get_basic_features(smiles):
+    """Compute 9 basic molecular descriptors."""
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
@@ -42,31 +38,9 @@ def get_basic_features(smiles):
     except:
         return None
 
-basic_list = []
-for i, smiles in enumerate(df['smiles']):
-    result = get_basic_features(smiles)
-    # If molecule is invalid, fill with zeros instead of None
-    if result is None:
-        result = {
-            'MolWt': 0, 'LogP': 0, 'NumHDonors': 0,
-            'NumHAcceptors': 0, 'TPSA': 0, 'NumRotatableBonds': 0,
-            'NumAromaticRings': 0, 'NumHeavyAtoms': 0, 'FractionCSP3': 0
-        }
-    basic_list.append(result)
-    if i % 2000 == 0:
-        print(f"  Progress: {i}/{len(df)}")
-
-basic_df = pd.DataFrame(basic_list)
-print(f"✅ Basic descriptors done — {basic_df.shape[1]} features")
-
-# ----------------------------------------
-# FEATURE 2: Morgan Fingerprints
-# ----------------------------------------
-print("\n" + "=" * 50)
-print("EXTRACTING MORGAN FINGERPRINTS")
-print("=" * 50)
 
 def get_morgan_fp(smiles):
+    """Compute 1024-bit Morgan (ECFP4) fingerprint."""
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
@@ -78,28 +52,6 @@ def get_morgan_fp(smiles):
     except:
         return None
 
-fp_list = []
-for i, smiles in enumerate(df['smiles']):
-    fp = get_morgan_fp(smiles)
-    # If invalid molecule, use zeros
-    if fp is None:
-        fp = np.zeros(1024)
-    fp_list.append(fp)
-    if i % 2000 == 0:
-        print(f"  Progress: {i}/{len(df)}")
-
-fp_df = pd.DataFrame(
-    fp_list,
-    columns=[f'FP_{i}' for i in range(1024)]
-)
-print(f"✅ Morgan fingerprints done — {fp_df.shape[1]} features")
-
-# ----------------------------------------
-# FEATURE 3: Toxicophore Detection
-# ----------------------------------------
-print("\n" + "=" * 50)
-print("DETECTING TOXICOPHORES")
-print("=" * 50)
 
 TOXICOPHORES = {
     'tox_Nitro_group':      '[N+](=O)[O-]',
@@ -114,7 +66,9 @@ TOXICOPHORES = {
     'tox_Peroxide':         'OO',
 }
 
+
 def detect_toxicophores(smiles):
+    """Detect 10 known toxicophore substructures."""
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
@@ -129,38 +83,104 @@ def detect_toxicophores(smiles):
     except:
         return None
 
-empty_tox = {name: 0 for name in TOXICOPHORES.keys()}
-empty_tox['total_toxicophores'] = 0
 
-tox_list = []
-for i, smiles in enumerate(df['smiles']):
-    result = detect_toxicophores(smiles)
-    if result is None:
-        result = empty_tox.copy()
-    tox_list.append(result)
-    if i % 2000 == 0:
-        print(f"  Progress: {i}/{len(df)}")
+# ────────────────────────────────────────────
+# PROCESS A SINGLE SPLIT
+# ────────────────────────────────────────────
 
-tox_df = pd.DataFrame(tox_list)
-print(f"✅ Toxicophores done — {tox_df.shape[1]} features")
+def process_split(input_path: str, output_path: str, split_name: str):
+    """
+    Load a scaffold-split CSV, compute all features,
+    and save the processed result.
+    """
+    print(f"\n{'=' * 60}")
+    print(f"PROCESSING {split_name.upper()} SPLIT")
+    print(f"{'=' * 60}")
 
-print("\nToxicophore counts in dataset:")
-for col in tox_df.columns:
-    print(f"  {col:30s}: {int(tox_df[col].sum())}")
+    df = pd.read_csv(input_path)
+    print(f"✅ Loaded {len(df)} molecules from {input_path}")
 
-# ----------------------------------------
-# COMBINE ALL FEATURES
-# ----------------------------------------
-print("\n" + "=" * 50)
-print("COMBINING ALL FEATURES")
-print("=" * 50)
+    # --- Basic descriptors ---
+    print(f"\n  Extracting basic descriptors...")
+    basic_list = []
+    for i, smiles in enumerate(df['smiles']):
+        result = get_basic_features(smiles)
+        if result is None:
+            result = {
+                'MolWt': 0, 'LogP': 0, 'NumHDonors': 0,
+                'NumHAcceptors': 0, 'TPSA': 0, 'NumRotatableBonds': 0,
+                'NumAromaticRings': 0, 'NumHeavyAtoms': 0, 'FractionCSP3': 0
+            }
+        basic_list.append(result)
+        if i % 2000 == 0:
+            print(f"    Progress: {i}/{len(df)}")
+    basic_df = pd.DataFrame(basic_list)
+    print(f"  ✅ Basic descriptors — {basic_df.shape[1]} features")
 
-final_df = pd.concat([df, basic_df, fp_df, tox_df], axis=1)
-final_df = final_df.dropna(subset=['MolWt'])
+    # --- Morgan fingerprints ---
+    print(f"\n  Extracting Morgan fingerprints...")
+    fp_list = []
+    for i, smiles in enumerate(df['smiles']):
+        fp = get_morgan_fp(smiles)
+        if fp is None:
+            fp = np.zeros(1024)
+        fp_list.append(fp)
+        if i % 2000 == 0:
+            print(f"    Progress: {i}/{len(df)}")
+    fp_df = pd.DataFrame(fp_list, columns=[f'FP_{i}' for i in range(1024)])
+    print(f"  ✅ Morgan fingerprints — {fp_df.shape[1]} features")
 
-final_df.to_csv('data/tox21_processed.csv', index=False)
+    # --- Toxicophores ---
+    print(f"\n  Detecting toxicophores...")
+    empty_tox = {name: 0 for name in TOXICOPHORES.keys()}
+    empty_tox['total_toxicophores'] = 0
+    tox_list = []
+    for i, smiles in enumerate(df['smiles']):
+        result = detect_toxicophores(smiles)
+        if result is None:
+            result = empty_tox.copy()
+        tox_list.append(result)
+        if i % 2000 == 0:
+            print(f"    Progress: {i}/{len(df)}")
+    tox_df = pd.DataFrame(tox_list)
+    print(f"  ✅ Toxicophores — {tox_df.shape[1]} features")
 
-print(f"✅ Total features: {basic_df.shape[1] + fp_df.shape[1] + tox_df.shape[1]}")
-print(f"✅ Final dataset shape: {final_df.shape}")
-print(f"✅ Saved to data/tox21_processed.csv")
+    # --- Combine and save ---
+    final_df = pd.concat([df, basic_df, fp_df, tox_df], axis=1)
+    final_df = final_df.dropna(subset=['MolWt'])
+
+    final_df.to_csv(output_path, index=False)
+    total_feats = basic_df.shape[1] + fp_df.shape[1] + tox_df.shape[1]
+    print(f"\n  ✅ Total features: {total_feats}")
+    print(f"  ✅ Final shape: {final_df.shape}")
+    print(f"  ✅ Saved to {output_path}")
+
+    return final_df
+
+
+# ────────────────────────────────────────────
+# MAIN: Process both train and test splits
+# ────────────────────────────────────────────
+
+print("=" * 60)
+print("STEP 2: FEATURE EXTRACTION (SCAFFOLD-SPLIT)")
+print("=" * 60)
+
+train_df = process_split(
+    input_path  = 'data/tox21_train_scaffold.csv',
+    output_path = 'data/tox21_train_processed.csv',
+    split_name  = 'train'
+)
+
+test_df = process_split(
+    input_path  = 'data/tox21_test_scaffold.csv',
+    output_path = 'data/tox21_test_processed.csv',
+    split_name  = 'test'
+)
+
+print("\n" + "=" * 60)
+print("SUMMARY")
+print("=" * 60)
+print(f"  Train processed : {train_df.shape}")
+print(f"  Test  processed : {test_df.shape}")
 print("\n🎉 Feature Extraction Complete!")
