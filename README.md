@@ -63,6 +63,18 @@ Traditional toxicity testing requires expensive lab work, animal testing, and mo
 
 ## ⭐ Key Features
 
+### 🧬 Scaffold Splitting (Data Leakage Prevention)
+Unlike naive random splits, we use **Murcko scaffold-based splitting** (`GroupShuffleSplit`) to ensure structurally similar molecules never appear in both train and test sets. This prevents artificially inflated metrics and gives scientifically rigorous evaluation.
+
+```
+  SMILES → RDKit MurckoScaffoldSmiles → Scaffold Group
+      ↓
+  GroupShuffleSplit(groups=scaffold)
+      ↓
+  Train: 6,942 molecules | Test: 881 molecules
+  Scaffold Overlap: 0 ✅ (zero leakage)
+```
+
 ### 🔬 Advanced Feature Engineering
 | Feature Type | Count | Description |
 |---|---|---|
@@ -132,24 +144,26 @@ Local Database (50+ drugs)
 
 ### ROC-AUC Scores Across All 12 Tox21 Assays
 
+> **Evaluated using Scaffold Splitting** — all molecules sharing the same Murcko scaffold are strictly in either the train or test set, never both. This eliminates data leakage from structurally similar molecules and provides scientifically honest metrics.
+
 | Assay | Biological Target | ROC-AUC | F1 Score |
 |---|---|---|---|
-| **SR-MMP** | Mitochondrial membrane potential | **0.8966** | 0.5714 |
-| **NR-AhR** | Aryl hydrocarbon receptor | **0.8860** | 0.5393 |
-| **NR-Aromatase** | Estrogen synthesis enzyme | **0.8791** | 0.4407 |
-| **SR-p53** | DNA damage response | **0.8699** | 0.3665 |
-| **SR-ATAD5** | DNA damage/replication stress | **0.8755** | 0.3789 |
-| **SR-ARE** | Oxidative stress response | **0.8176** | 0.4619 |
-| **NR-ER-LBD** | Estrogen receptor (binding) | **0.8117** | 0.4320 |
-| **NR-PPAR-gamma** | Metabolic disruption | **0.8112** | 0.2295 |
-| **NR-AR-LBD** | Androgen receptor (binding) | **0.7893** | 0.5526 |
-| **SR-HSE** | Heat shock / stress response | **0.7671** | 0.3265 |
-| **NR-AR** | Androgen receptor (full) | **0.7626** | 0.4333 |
-| **NR-ER** | Estrogen receptor (full) | **0.6968** | 0.3726 |
+| **NR-AR-LBD** | Androgen receptor (binding) | **0.9480** | 0.8333 |
+| **SR-MMP** | Mitochondrial membrane potential | **0.8802** | 0.6127 |
+| **NR-AhR** | Aryl hydrocarbon receptor | **0.8587** | 0.4790 |
+| **NR-ER-LBD** | Estrogen receptor (binding) | **0.8536** | 0.5645 |
+| **NR-AR** | Androgen receptor (full) | **0.8512** | 0.6358 |
+| **SR-ATAD5** | DNA damage/replication stress | **0.8142** | 0.2927 |
+| **NR-PPAR-gamma** | Metabolic disruption | **0.7883** | 0.2051 |
+| **NR-Aromatase** | Estrogen synthesis enzyme | **0.7872** | 0.3404 |
+| **NR-ER** | Estrogen receptor (full) | **0.7731** | 0.4916 |
+| **SR-ARE** | Oxidative stress response | **0.7384** | 0.4451 |
+| **SR-HSE** | Heat shock / stress response | **0.7205** | 0.2453 |
+| **SR-p53** | DNA damage response | **0.7183** | 0.2123 |
 
-**✅ 9 out of 12 targets exceed the 0.75 industry benchmark threshold**
+**✅ 8 out of 12 targets exceed the 0.75 industry benchmark threshold (with scaffold split)**
 
-**📈 Best AUC: 0.8966 (SR-MMP) — above published state-of-the-art range of 0.80–0.85**
+**📈 Best AUC: 0.9480 (NR-AR-LBD) — achieved with rigorous scaffold-based evaluation**
 
 ### Class Imbalance Handling
 The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds). We address this via:
@@ -187,26 +201,30 @@ The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds
 CodeCure/
 │
 ├── data/
-│   ├── tox21.csv                  # Raw dataset (7,831 compounds)
-│   └── tox21_processed.csv        # Processed with 1033+ features
+│   ├── tox21.csv                    # Raw dataset (7,831 compounds)
+│   ├── tox21_train_scaffold.csv     # Scaffold-split train set (6,942)
+│   ├── tox21_test_scaffold.csv      # Scaffold-split test set (881)
+│   ├── tox21_train_processed.csv    # Train set with 1033+ features
+│   └── tox21_test_processed.csv     # Test set with 1033+ features
 │
 ├── src/
-│   ├── 01_eda.py                  # Exploratory Data Analysis
-│   ├── 02_features.py             # Feature extraction pipeline
-│   ├── 03_train.py                # Model training (12 ensemble models)
-│   └── 04_visualize.py            # Generate all result visualizations
+│   ├── 01_eda.py                    # Exploratory Data Analysis
+│   ├── 01b_scaffold_split.py        # Murcko scaffold splitting (NEW)
+│   ├── 02_features.py               # Feature extraction (train/test)
+│   ├── 03_train.py                  # Model training (scaffold-split)
+│   └── 04_visualize.py              # Generate all result visualizations
 │
 ├── results/
-│   ├── models.pkl                 # Saved ensemble models (all 12 targets)
-│   ├── metrics.csv                # AUC + F1 per assay
-│   ├── 01_per_assay_auc.png       # AUC bar chart
-│   ├── 02_correlation_heatmap.png # Molecular properties vs toxicity
+│   ├── models.pkl                   # Saved ensemble models (all 12)
+│   ├── metrics.csv                  # AUC + F1 per assay
+│   ├── 01_per_assay_auc.png         # AUC bar chart
+│   ├── 02_correlation_heatmap.png   # Molecular properties vs toxicity
 │   ├── 03_toxicophore_frequency.png # Toxicophore distribution
-│   ├── 04_shap_summary.png        # SHAP feature importance
+│   ├── 04_shap_summary.png         # SHAP feature importance
 │   └── 05_real_drug_predictions.png # Validation on FDA drugs
 │
 ├── app/
-│   └── app.py                     # Streamlit web application
+│   └── app.py                       # Streamlit web application
 │
 ├── requirements.txt
 └── README.md
@@ -251,16 +269,19 @@ conda activate codecure
 # Step 1: Explore data
 python src/01_eda.py
 
-# Step 2: Extract features
+# Step 2: Scaffold split (prevents data leakage)
+python src/01b_scaffold_split.py
+
+# Step 3: Extract features (train & test independently)
 python src/02_features.py
 
-# Step 3: Train models (~15 mins)
+# Step 4: Train models (~15 mins)
 python src/03_train.py
 
-# Step 4: Generate visualizations
+# Step 5: Generate visualizations
 python src/04_visualize.py
 
-# Step 5: Launch app
+# Step 6: Launch app
 streamlit run app/app.py
 ```
 
@@ -352,6 +373,7 @@ From molecular properties → estimate:
 
 | Feature | Typical Team | ToxPredict |
 |---|---|---|
+| Data split | Random split (leaky) | **Scaffold split (zero leakage)** |
 | Feature count | 9 descriptors | **1033+ (Morgan FP + toxicophores)** |
 | Model type | Single XGBoost | **Ensemble of 3 models** |
 | Drug input | SMILES only | **Drug name OR SMILES** |
