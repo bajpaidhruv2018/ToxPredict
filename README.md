@@ -5,6 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red?style=for-the-badge&logo=streamlit)
 ![XGBoost](https://img.shields.io/badge/XGBoost-Ensemble-green?style=for-the-badge)
+![PyTorch](https://img.shields.io/badge/PyTorch-MTL-EE4C2C?style=for-the-badge&logo=pytorch)
 ![RDKit](https://img.shields.io/badge/RDKit-Cheminformatics-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
@@ -84,7 +85,9 @@ Unlike naive random splits, we use **Murcko scaffold-based splitting** (`GroupSh
 | Surrogate QED (ZINC250k) | 1 | Drug-likeness score from ZINC-trained LightGBM surrogate |
 | **Total Features** | **1044+** | Combined feature vector per molecule |
 
-### 🤖 Ensemble Model Architecture
+### 🤖 Dual Model Architecture
+
+#### Model A: Classical Ensemble (per-target)
 ```
 Input Molecule
       │
@@ -109,6 +112,24 @@ Input Molecule
          Toxicity Probability
          (per assay target)
 ```
+
+#### Model B: Multi-Task Neural Network (all 12 targets jointly)
+```
+Input Features (1045)
+      │
+      ▼
+  Linear(512) → ReLU → BatchNorm → Dropout(0.3)
+      │
+      ▼
+  Linear(256) → ReLU → BatchNorm → Dropout(0.3)
+      │
+      ▼
+  Linear(12) → BCEWithLogitsLoss (NaN-masked)
+      │
+      ▼
+  12 Toxicity Probabilities (simultaneous)
+```
+> The MTL model uses **masked loss** to handle missing labels — NaN targets contribute zero gradient, enabling joint training across all 12 assays.
 
 ### 🧪 Toxicophore Detection
 Detects 10 known toxic substructures in real time:
@@ -186,6 +207,7 @@ The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds
 ### Machine Learning
 - `XGBoost` — Gradient boosted trees
 - `scikit-learn` — Random Forest, Logistic Regression, VotingClassifier
+- `PyTorch` — Multi-task feed-forward neural network (masked BCEWithLogitsLoss)
 - `SHAP` — Model explainability
 
 ### Cheminformatics
@@ -226,10 +248,12 @@ CodeCure/
 │   ├── 02_features.py               # Feature extraction (train/test)
 │   ├── 02b_zinc_feature_engine.py   # ZINC250k surrogate QED feature engine
 │   ├── 03_train.py                  # Model training (scaffold-split)
-│   └── 04_visualize.py              # Generate all result visualizations
+│   ├── 04_visualize.py              # Generate all result visualizations
+│   └── 05_nn_multitask.py           # PyTorch multi-task MLP (all 12 targets)
 │
 ├── results/
 │   ├── models.pkl                   # Saved ensemble models (all 12)
+│   ├── multitask_mlp.pth            # PyTorch multi-task MLP weights
 │   ├── zinc_qed_surrogate.pkl       # LightGBM surrogate (ZINC→QED)
 │   ├── metrics.csv                  # AUC + F1 per assay
 │   ├── 01_per_assay_auc.png         # AUC bar chart
@@ -293,10 +317,13 @@ python src/02_features.py
 # Step 4: ZINC250k surrogate QED enrichment (auto-downloads ZINC if needed)
 python src/02b_zinc_feature_engine.py
 
-# Step 5: Train models (~15 mins)
+# Step 5: Train ensemble models (~15 mins)
 python src/03_train.py
 
-# Step 6: Generate visualizations
+# Step 6: Train multi-task neural network (~2 mins)
+python src/05_nn_multitask.py
+
+# Step 7: Generate visualizations
 python src/04_visualize.py
 
 # Step 7: Launch app
@@ -339,7 +366,7 @@ SMILES String → RDKit → 4 Feature Types:
     ZINC250k molecules (transfer learning)
 ```
 
-### 2. Ensemble Prediction
+### 2. Ensemble Prediction (Model A)
 ```
 For each of 12 toxicity targets:
   → Train XGBoost + Random Forest + Logistic Regression
@@ -348,7 +375,17 @@ For each of 12 toxicity targets:
   → Output: toxicity probability [0.0 - 1.0]
 ```
 
-### 3. Explainability
+### 3. Multi-Task Neural Network (Model B)
+```
+All 12 targets trained jointly:
+  → Feed-forward MLP: 1045 → 512 → 256 → 12
+  → NaN-masked BCEWithLogitsLoss (missing labels → zero gradient)
+  → BatchNorm + Dropout for regularization
+  → Adam optimizer, 20 epochs
+  → Output: 12 toxicity probabilities simultaneously
+```
+
+### 4. Explainability
 ```
 SHAP TreeExplainer
   → Shows which molecular features
@@ -357,7 +394,7 @@ SHAP TreeExplainer
   → Force plot for individual molecules
 ```
 
-### 4. ADMET Profiling
+### 5. ADMET Profiling
 ```
 From molecular properties → estimate:
   Absorption  → Oral bioavailability, GI absorption
@@ -398,7 +435,7 @@ From molecular properties → estimate:
 |---|---|---|
 | Data split | Random split (leaky) | **Scaffold split (zero leakage)** |
 | Feature count | 9 descriptors | **1044+ (Morgan FP + toxicophores + ZINC surrogate QED)** |
-| Model type | Single XGBoost | **Ensemble of 3 models** |
+| Model type | Single XGBoost | **Ensemble of 3 + Multi-Task MLP** |
 | Applicability | Silent OOD failure | **Tanimoto nearest-neighbor AD check** |
 | Drug input | SMILES only | **Drug name OR SMILES** |
 | Molecule view | 2D image | **Interactive 3D rotation** |
@@ -421,7 +458,7 @@ From molecular properties → estimate:
 - [ ] Graph Neural Networks (GNNs) for molecular graph-based learning
 - [ ] 3D shape descriptors using RDKit conformer generation
 - [ ] Integration with ChEMBL for larger training data
-- [ ] Multi-task learning across all 12 targets simultaneously
+- [x] Multi-task learning across all 12 targets simultaneously ✅
 - [ ] Deployment on Streamlit Cloud for public access
 - [ ] Support for protein-ligand docking scores
 
@@ -438,6 +475,7 @@ scikit-learn
 xgboost
 lightgbm
 joblib
+torch
 shap
 streamlit
 rdkit
