@@ -51,7 +51,7 @@ Traditional toxicity testing requires expensive lab work, animal testing, and mo
 **ToxPredict** is an end-to-end AI pipeline that:
 
 1. Takes any drug name or SMILES string as input
-2. Extracts 1033+ molecular features using cheminformatics
+2. Extracts 1044+ molecular features using cheminformatics
 3. Predicts toxicity across **12 biological assay targets** simultaneously
 4. Explains *why* a molecule is toxic using SHAP and toxicophore detection
 5. Provides a full **ADMET drug safety profile**
@@ -81,7 +81,8 @@ Unlike naive random splits, we use **Murcko scaffold-based splitting** (`GroupSh
 | Basic Molecular Descriptors | 9 | MolWt, LogP, TPSA, H-donors/acceptors, etc. |
 | Morgan Fingerprints | 1024 | Circular molecular fingerprints (radius=2) |
 | Toxicophore Flags | 10 | Known toxic substructure detection |
-| **Total Features** | **1033+** | Combined feature vector per molecule |
+| Surrogate QED (ZINC250k) | 1 | Drug-likeness score from ZINC-trained LightGBM surrogate |
+| **Total Features** | **1044+** | Combined feature vector per molecule |
 
 ### 🤖 Ensemble Model Architecture
 ```
@@ -92,6 +93,7 @@ Input Molecule
 │         Feature Extraction          │
 │  Basic Descriptors + Morgan FP      │
 │  + Toxicophore Detection            │
+│  + Surrogate QED (ZINC250k)         │
 └─────────────────┬───────────────────┘
                   │
       ┌───────────┼───────────┐
@@ -198,6 +200,10 @@ The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds
 ### Data
 - `Pandas` / `NumPy` — Data processing
 - `Tox21 Dataset` — 7,831 compounds, 12 toxicity assay labels
+- `ZINC250k` — 250k drug-like molecules (surrogate QED feature source)
+
+### Transfer Learning
+- `LightGBM` — Surrogate QED regressor trained on ZINC250k fingerprints
 
 ---
 
@@ -208,20 +214,23 @@ CodeCure/
 │
 ├── data/
 │   ├── tox21.csv                    # Raw dataset (7,831 compounds)
+│   ├── zinc250k.csv                 # ZINC250k drug-like molecules (auto-downloaded)
 │   ├── tox21_train_scaffold.csv     # Scaffold-split train set (6,942)
 │   ├── tox21_test_scaffold.csv      # Scaffold-split test set (881)
-│   ├── tox21_train_processed.csv    # Train set with 1033+ features
-│   └── tox21_test_processed.csv     # Test set with 1033+ features
+│   ├── tox21_train_processed.csv    # Train set with 1044+ features
+│   └── tox21_test_processed.csv     # Test set with 1044+ features
 │
 ├── src/
 │   ├── 01_eda.py                    # Exploratory Data Analysis
-│   ├── 01b_scaffold_split.py        # Murcko scaffold splitting (NEW)
+│   ├── 01b_scaffold_split.py        # Murcko scaffold splitting
 │   ├── 02_features.py               # Feature extraction (train/test)
+│   ├── 02b_zinc_feature_engine.py   # ZINC250k surrogate QED feature engine
 │   ├── 03_train.py                  # Model training (scaffold-split)
 │   └── 04_visualize.py              # Generate all result visualizations
 │
 ├── results/
 │   ├── models.pkl                   # Saved ensemble models (all 12)
+│   ├── zinc_qed_surrogate.pkl       # LightGBM surrogate (ZINC→QED)
 │   ├── metrics.csv                  # AUC + F1 per assay
 │   ├── 01_per_assay_auc.png         # AUC bar chart
 │   ├── 02_correlation_heatmap.png   # Molecular properties vs toxicity
@@ -281,13 +290,16 @@ python src/01b_scaffold_split.py
 # Step 3: Extract features (train & test independently)
 python src/02_features.py
 
-# Step 4: Train models (~15 mins)
+# Step 4: ZINC250k surrogate QED enrichment (auto-downloads ZINC if needed)
+python src/02b_zinc_feature_engine.py
+
+# Step 5: Train models (~15 mins)
 python src/03_train.py
 
-# Step 5: Generate visualizations
+# Step 6: Generate visualizations
 python src/04_visualize.py
 
-# Step 6: Launch app
+# Step 7: Launch app
 streamlit run app/app.py
 ```
 
@@ -305,7 +317,7 @@ App opens at `http://localhost:8501`
 
 ### 1. Molecular Feature Extraction
 ```
-SMILES String → RDKit → 3 Feature Types:
+SMILES String → RDKit → 4 Feature Types:
 
   Type 1: Basic Descriptors (9 features)
     MolWt, LogP, TPSA, H-donors,
@@ -320,6 +332,11 @@ SMILES String → RDKit → 3 Feature Types:
   Type 3: Toxicophore Flags (10 features)
     Binary detection of 10 known
     toxic chemical substructures
+
+  Type 4: Surrogate QED (1 feature)
+    Drug-likeness score predicted by a
+    LightGBM surrogate trained on 50K
+    ZINC250k molecules (transfer learning)
 ```
 
 ### 2. Ensemble Prediction
@@ -380,7 +397,7 @@ From molecular properties → estimate:
 | Feature | Typical Team | ToxPredict |
 |---|---|---|
 | Data split | Random split (leaky) | **Scaffold split (zero leakage)** |
-| Feature count | 9 descriptors | **1033+ (Morgan FP + toxicophores)** |
+| Feature count | 9 descriptors | **1044+ (Morgan FP + toxicophores + ZINC surrogate QED)** |
 | Model type | Single XGBoost | **Ensemble of 3 models** |
 | Applicability | Silent OOD failure | **Tanimoto nearest-neighbor AD check** |
 | Drug input | SMILES only | **Drug name OR SMILES** |
@@ -419,6 +436,8 @@ matplotlib
 seaborn
 scikit-learn
 xgboost
+lightgbm
+joblib
 shap
 streamlit
 rdkit
@@ -455,6 +474,7 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgements
 
 - **Tox21 Dataset** — National Toxicology Program & NIH
+- **ZINC250k** — Irwin et al., ZINC database of commercially available compounds
 - **RDKit** — Open-source cheminformatics library
 - **PubChem** — Free chemical structure database (NIH)
 - **3Dmol.js** — 3D molecular visualization library
