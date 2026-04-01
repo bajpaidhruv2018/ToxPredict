@@ -20,7 +20,7 @@ function initLoader() {
   gsap.to(loader, {
     opacity: 0,
     duration: 0.6,
-    delay: 1.8,
+    delay: 1.0,
     ease: 'power2.inOut',
     onComplete: () => {
       loader.style.display = 'none';
@@ -33,9 +33,11 @@ function initLoader() {
 let lenis;
 function initLenis() {
   lenis = new Lenis({
-    lerp: 0.1,
-    duration: 1.2,
+    lerp: 0.15,
+    duration: 0.8,
     smoothWheel: true,
+    wheelMultiplier: 1,
+    touchMultiplier: 1.5,
   });
 
   lenis.on('scroll', ScrollTrigger.update);
@@ -53,7 +55,7 @@ function initThreeJS() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const isMobile = window.innerWidth < 768;
-  const particleCount = isMobile ? 50 : 150;
+  const particleCount = isMobile ? 30 : 80;
   const positions = [];
   const velocities = [];
 
@@ -75,9 +77,10 @@ function initThreeJS() {
 
   const material = new THREE.PointsMaterial({
     color: 0x0ea5e9,
-    size: 0.04,
+    size: 0.06,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.7,
+    sizeAttenuation: true,
   });
 
   const points = new THREE.Points(geometry, material);
@@ -99,10 +102,13 @@ function initThreeJS() {
   document.addEventListener('mousemove', (e) => {
     mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
     mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
-  });
+  }, { passive: true });
 
+  let frameCount = 0;
+  let cachedLinePositions = [];
   function animate() {
     requestAnimationFrame(animate);
+    frameCount++;
 
     const pos = geometry.attributes.position.array;
     for (let i = 0; i < particleCount * 3; i += 3) {
@@ -117,24 +123,27 @@ function initThreeJS() {
     }
     geometry.attributes.position.needsUpdate = true;
 
-    // Update connections
-    const linePositions = [];
-    const connectionDistance = 1.5;
-    for (let i = 0; i < particleCount; i++) {
-      for (let j = i + 1; j < particleCount; j++) {
-        const dx = pos[i * 3] - pos[j * 3];
-        const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-        const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist < connectionDistance) {
-          linePositions.push(
-            pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2],
-            pos[j * 3], pos[j * 3 + 1], pos[j * 3 + 2]
-          );
+    // Update connections every 3rd frame for performance
+    if (frameCount % 3 === 0) {
+      cachedLinePositions = [];
+      const connDist = 2.0;
+      const connDistSq = connDist * connDist;
+      for (let i = 0; i < particleCount; i++) {
+        for (let j = i + 1; j < particleCount; j++) {
+          const dx = pos[i * 3] - pos[j * 3];
+          const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+          const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
+          const distSq = dx * dx + dy * dy + dz * dz;
+          if (distSq < connDistSq) {
+            cachedLinePositions.push(
+              pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2],
+              pos[j * 3], pos[j * 3 + 1], pos[j * 3 + 2]
+            );
+          }
         }
       }
+      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(cachedLinePositions, 3));
     }
-    lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
 
     // Subtle camera movement with mouse
     camera.position.x += (mouseX * 0.3 - camera.position.x) * 0.02;
@@ -162,7 +171,7 @@ function initCursor() {
   document.addEventListener('mousemove', (e) => {
     cx = e.clientX;
     cy = e.clientY;
-  });
+  }, { passive: true });
 
   function animateCursor() {
     fx += (cx - fx) * 0.15;
@@ -182,16 +191,42 @@ function initCursor() {
   });
 }
 
-/* ===== NAVBAR ===== */
+/* ===== NAVBAR + SCROLL PROGRESS ===== */
 function initNavbar() {
   const navbar = document.getElementById('navbar');
+  const progressBar = document.getElementById('scroll-progress');
+  const allNavLinks = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id]');
+
   window.addEventListener('scroll', () => {
     if (window.scrollY > 100) {
       navbar.classList.add('scrolled');
     } else {
       navbar.classList.remove('scrolled');
     }
-  });
+
+    // Scroll progress bar
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (progressBar && docHeight > 0) {
+      progressBar.style.width = ((scrollTop / docHeight) * 100) + '%';
+    }
+
+    // Active nav link highlighting
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 200;
+      if (scrollTop >= sectionTop) {
+        current = section.getAttribute('id');
+      }
+    });
+    allNavLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  }, { passive: true });
 }
 
 /* ===== HAMBURGER ===== */
@@ -215,7 +250,7 @@ function initHamburger() {
 function initHeroAnimations() {
   gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-  const tl = gsap.timeline({ delay: 2 });
+  const tl = gsap.timeline({ delay: 1.2 });
 
   // Navbar stagger in
   tl.from('.nav-logo, .nav-link, .nav-cta', {
