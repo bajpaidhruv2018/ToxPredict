@@ -45,45 +45,197 @@ st.set_page_config(
 # ============================================
 st.markdown("""
 <style>
+    /* ===== SCROLL FIX ===== */
+    html, body, [data-testid="stAppViewContainer"], .main,
+    [data-testid="stVerticalBlock"], section[data-testid="stSidebar"] {
+        scroll-behavior: auto !important;
+    }
+
+    /* ===== GOOGLE FONT ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* ===== GLOBAL ===== */
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Inter', sans-serif !important;
+    }
+    .main .block-container {
+        background-color: #F7FAF8 !important;
+    }
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(180deg, #F0F7F4 0%, #F7FAF8 100%) !important;
+    }
+    [data-testid="stHeader"] {
+        background-color: #FFFFFF !important;
+        border-bottom: 2px solid #0D9B6A !important;
+    }
+
+    /* ===== SIDEBAR ===== */
+    section[data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #D1E7DD !important;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #1E293B !important;
+    }
+    section[data-testid="stSidebar"] .stMetric label {
+        color: #64748B !important;
+    }
+    section[data-testid="stSidebar"] .stMetric [data-testid="stMetricValue"] {
+        color: #0D9B6A !important;
+    }
+
+    /* ===== METRIC CARDS ===== */
     .stMetric {
-        background-color: #161b22;
-        border: 1px solid #30363d;
+        background-color: #FFFFFF !important;
+        border: 1px solid #D1E7DD !important;
         border-radius: 10px;
         padding: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
     }
+    [data-testid="stMetricValue"] {
+        color: #1E293B !important;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #64748B !important;
+    }
+
+    /* ===== TEXT ===== */
+    h1, h2, h3, h4, h5, h6, p, span, label, .stMarkdown {
+        color: #1E293B !important;
+    }
+    .stCaption, .stCaption p {
+        color: #64748B !important;
+    }
+
+    /* ===== RISK CARDS ===== */
     .risk-high {
-        background: #3d1515;
-        border: 1px solid #e74c3c;
+        background: #FEF2F2;
+        border: 2px solid #DC2626;
         border-radius: 10px;
         padding: 15px;
-        color: #e74c3c;
+        color: #DC2626;
         font-weight: bold;
         font-size: 18px;
         margin: 10px 0;
     }
     .risk-moderate {
-        background: #3d2e10;
-        border: 1px solid #f39c12;
+        background: #FFFBEB;
+        border: 2px solid #F59E0B;
         border-radius: 10px;
         padding: 15px;
-        color: #f39c12;
+        color: #B45309;
         font-weight: bold;
         font-size: 18px;
         margin: 10px 0;
     }
     .risk-low {
-        background: #0f3d20;
-        border: 1px solid #2ecc71;
+        background: #ECFDF5;
+        border: 2px solid #10B981;
         border-radius: 10px;
         padding: 15px;
-        color: #2ecc71;
+        color: #047857;
         font-weight: bold;
         font-size: 18px;
         margin: 10px 0;
     }
-    .confidence-high   { color: #2ecc71; font-size: 12px; }
-    .confidence-medium { color: #f39c12; font-size: 12px; }
-    .confidence-low    { color: #e74c3c; font-size: 12px; }
+
+    /* ===== CONFIDENCE ===== */
+    .confidence-high   { color: #10B981; font-size: 12px; }
+    .confidence-medium { color: #F59E0B; font-size: 12px; }
+    .confidence-low    { color: #DC2626; font-size: 12px; }
+
+    /* ===== BUTTONS ===== */
+    .stButton > button {
+        background-color: #FFFFFF !important;
+        color: #1E293B !important;
+        border: 1px solid #D1E7DD !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+    }
+    .stButton > button:hover {
+        background-color: #ECFDF5 !important;
+        border-color: #0D9B6A !important;
+        color: #0D9B6A !important;
+    }
+    .stButton > button[kind="primary"],
+    button[data-testid="stBaseButton-primary"] {
+        background-color: #0D9B6A !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        font-weight: 600 !important;
+    }
+    button[data-testid="stBaseButton-primary"]:hover {
+        background-color: #0A7F56 !important;
+    }
+
+    /* ===== INPUTS ===== */
+    .stTextInput input, .stSelectbox select {
+        background-color: #FFFFFF !important;
+        border: 1px solid #D1E7DD !important;
+        color: #1E293B !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput input:focus {
+        border-color: #0D9B6A !important;
+        box-shadow: 0 0 0 2px rgba(13,155,106,0.15) !important;
+    }
+
+    /* ===== TABS ===== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 4px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #D1E7DD !important;
+        border-radius: 8px !important;
+        color: #64748B !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #0D9B6A !important;
+        color: #FFFFFF !important;
+        border-color: #0D9B6A !important;
+    }
+
+    /* ===== RADIOS (mode selector) ===== */
+    [data-testid="stRadio"] label {
+        color: #1E293B !important;
+    }
+
+    /* ===== EXPANDER ===== */
+    .streamlit-expanderHeader {
+        background-color: #FFFFFF !important;
+        border: 1px solid #D1E7DD !important;
+        border-radius: 8px !important;
+        color: #1E293B !important;
+    }
+
+    /* ===== DATAFRAME ===== */
+    .stDataFrame {
+        border: 1px solid #D1E7DD !important;
+        border-radius: 8px !important;
+    }
+
+    /* ===== ALERTS/INFO ===== */
+    .stAlert {
+        border-radius: 8px !important;
+    }
+
+    /* ===== DIVIDERS ===== */
+    hr {
+        border-color: #D1E7DD !important;
+    }
+
+    /* ===== DOWNLOAD BUTTON ===== */
+    .stDownloadButton > button {
+        background-color: #EFF6FF !important;
+        color: #2563EB !important;
+        border: 1px solid #BFDBFE !important;
+    }
+    .stDownloadButton > button:hover {
+        background-color: #DBEAFE !important;
+        border-color: #2563EB !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -380,14 +532,14 @@ def get_3d_viewer(mol):
         <script src="https://3dmol.org/build/3Dmol-min.js"></script>
         <div id="viewer3d"
              style="height:300px;width:100%;
-                    background:#0d1117;
+                    background:#F7FAF8;
                     border-radius:12px;
-                    border:1px solid #30363d;">
+                    border:1px solid #D1E7DD;">
         </div>
         <script>
             let v = $3Dmol.createViewer(
                 document.getElementById('viewer3d'),
-                {{backgroundColor:'0x0d1117'}}
+                {{backgroundColor:'0xF7FAF8'}}
             );
             v.addModel(`{mol_block}`,'mol');
             v.setStyle({{}},{{
@@ -413,12 +565,12 @@ def plot_radar(predictions, title=""):
     values_loop  = values  + [values[0]]
     avg          = np.mean(values)
 
-    color      = ('rgba(231,76,60,0.4)'  if avg > 0.5 else
-                  'rgba(243,156,18,0.4)' if avg > 0.3 else
-                  'rgba(46,204,113,0.4)')
-    line_color = ('rgb(231,76,60)'  if avg > 0.5 else
-                  'rgb(243,156,18)' if avg > 0.3 else
-                  'rgb(46,204,113)')
+    color      = ('rgba(220,38,38,0.2)'  if avg > 0.5 else
+                  'rgba(245,158,11,0.2)' if avg > 0.3 else
+                  'rgba(16,185,129,0.2)')
+    line_color = ('rgb(220,38,38)'  if avg > 0.5 else
+                  'rgb(245,158,11)' if avg > 0.3 else
+                  'rgb(16,185,129)')
 
     fig = go.Figure(data=go.Scatterpolar(
         r=values_loop,
@@ -430,21 +582,21 @@ def plot_radar(predictions, title=""):
     ))
     fig.update_layout(
         polar=dict(
-            bgcolor='#161b22',
+            bgcolor='#FFFFFF',
             radialaxis=dict(
                 visible=True, range=[0, 1],
-                tickformat='.0%', color='#8b949e',
-                gridcolor='#30363d'
+                tickformat='.0%', color='#64748B',
+                gridcolor='#E2E8F0'
             ),
-            angularaxis=dict(color='#8b949e', gridcolor='#30363d')
+            angularaxis=dict(color='#64748B', gridcolor='#E2E8F0')
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white', size=11),
+        font=dict(color='#1E293B', size=11),
         showlegend=False,
         height=400,
         margin=dict(t=50, b=40),
-        title=dict(text=title, font=dict(size=13))
+        title=dict(text=title, font=dict(size=13, color='#1E293B'))
     )
     return fig
 
@@ -540,8 +692,9 @@ def run_prediction(smiles_input, models, show_alternatives=True):
             st.markdown("**🔬 Structure (toxic atoms in red)**")
             st.components.v1.html(
                 f"""
-                <div style="background:#1a1a2e; border-radius:10px; 
-                            padding:10px; border:1px solid #30363d;">
+                <div style="background:#FFFFFF; border-radius:10px; 
+                            padding:10px; border:1px solid #D1E7DD;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
                     {svg}
                 </div>
                 """,

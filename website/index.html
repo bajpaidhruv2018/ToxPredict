@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToxPredict — AI-Powered Drug Toxicity Prediction</title>
+  <meta name="description" content="Screen any molecule across 12 biological targets in milliseconds. Built on Tox21 — the gold standard toxicity dataset. Predict toxicity. Save lives. Faster.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loader" class="loader">
+    <div class="loader-content">
+      <div class="dna-helix">
+        <div class="dna-strand"></div><div class="dna-strand"></div><div class="dna-strand"></div>
+        <div class="dna-strand"></div><div class="dna-strand"></div><div class="dna-strand"></div>
+      </div>
+      <span class="loader-logo"><i data-lucide="dna" class="icon-inline"></i> ToxPredict</span>
+      <p class="loader-tagline">Predict toxicity. Save lives. Faster.</p>
+    </div>
+  </div>
+
+  <!-- Custom Cursor -->
+  <div id="custom-cursor" class="custom-cursor"></div>
+  <div id="cursor-follower" class="cursor-follower"></div>
+
+  <!-- Three.js Canvas -->
+  <canvas id="hero-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <nav id="navbar" class="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo" id="nav-logo"><i data-lucide="dna" class="icon-inline"></i> ToxPredict</a>
+      <div class="nav-links" id="nav-links">
+        <a href="#hero" class="nav-link">Home</a>
+        <a href="#predict" class="nav-link">Try It Live</a>
+        <a href="#results" class="nav-link">Results</a>
+        <a href="#about" class="nav-link">About</a>
+      </div>
+      <a href="#predict" class="nav-cta" id="nav-cta">Try Live →</a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Scroll Progress Bar -->
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <!-- HERO SECTION -->
+  <section id="hero" class="hero section">
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="hero-badge" id="hero-badge"><i data-lucide="award" class="icon-inline"></i> CodeCure Biohackathon · IIT BHU · Track A</div>
+        <h1 class="hero-heading">
+          <span class="hero-line"><span class="hero-word">Predict Drug</span></span>
+          <span class="hero-line"><span class="hero-word">Toxicity With</span></span>
+          <span class="hero-line"><span class="hero-word gradient-text">AI Precision</span></span>
+        </h1>
+        <p class="hero-sub" id="hero-sub">Screen any molecule across 12 biological targets in milliseconds. Built on Tox21 — the gold standard toxicity dataset.</p>
+        <div class="hero-buttons" id="hero-buttons">
+          <a href="#footer-cta" class="btn btn-primary"><i data-lucide="microscope" class="icon-inline"></i> Try ToxPredict</a>
+          <a href="https://github.com/bajpaidhruv2018" target="_blank" class="btn btn-outline">View on GitHub →</a>
+        </div>
+        <div class="hero-stats" id="hero-stats">
+          <div class="stat"><span class="stat-number" data-target="7831">0</span><span class="stat-label">Molecules Trained</span></div>
+          <div class="stat"><span class="stat-number" data-target="12">0</span><span class="stat-label">Assay Targets</span></div>
+          <div class="stat"><span class="stat-number" data-target="0.897" data-decimals="3">0</span><span class="stat-label">Best AUC</span></div>
+        </div>
+      </div>
+      <div class="hero-visual" id="hero-visual">
+        <div class="molecule-3d">
+          <div class="molecule-ring ring-1"></div>
+          <div class="molecule-ring ring-2"></div>
+          <div class="molecule-ring ring-3"></div>
+          <div class="atom atom-c" style="--x:0;--y:-60px"></div>
+          <div class="atom atom-c" style="--x:52px;--y:-30px"></div>
+          <div class="atom atom-c" style="--x:52px;--y:30px"></div>
+          <div class="atom atom-c" style="--x:0;--y:60px"></div>
+          <div class="atom atom-n" style="--x:-52px;--y:30px"></div>
+          <div class="atom atom-o" style="--x:-52px;--y:-30px"></div>
+          <div class="bond bond-1"></div><div class="bond bond-2"></div>
+          <div class="bond bond-3"></div><div class="bond bond-4"></div>
+          <div class="bond bond-5"></div><div class="bond bond-6"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM STATEMENT -->
+  <section id="problem" class="problem section">
+    <div class="container">
+      <div class="problem-hero">
+        <h2 class="massive-stat gradient-text-red">$2.6 Billion</h2>
+        <p class="problem-subtitle">Average cost of a failed drug due to unexpected toxicity</p>
+      </div>
+      <div class="problem-cards">
+        <div class="problem-card"><div class="problem-icon"><i data-lucide="clock" style="width:32px; height:32px;"></i></div><h3>Years of Testing</h3><p>Traditional toxicity testing takes 3-5 years per compound through animal studies and lab work</p></div>
+        <div class="problem-card"><div class="problem-icon"><i data-lucide="skull" style="width:32px; height:32px;"></i></div><h3>High Failure Rate</h3><p>90% of drug candidates fail — toxicity is the #1 reason for late-stage failures</p></div>
+        <div class="problem-card"><div class="problem-icon"><i data-lucide="pie-chart" style="width:32px; height:32px;"></i></div><h3>Massive Costs</h3><p>Each failed compound wastes millions before toxicity is discovered</p></div>
+      </div>
+      <div class="transition-line"><p class="transition-text">ToxPredict changes this.</p></div>
+    </div>
+  </section>
+
+  
+
+  <!-- LIVE PREDICTION SECTION -->
+  <section id="predict" class="predict-section section">
+    <div class="container">
+      <h2 class="section-title">Try It Live</h2>
+      <p class="section-subtitle">Type any drug name and get instant toxicity predictions</p>
+
+      <div class="predict-box">
+
+        <!-- Input Area -->
+        <div class="predict-input-area">
+          <div class="predict-tabs">
+            <button class="predict-tab active" id="tab-name"
+                    onclick="switchTab('name')">
+              <i data-lucide="type" class="icon-sm"></i> Search by Drug Name
+            </button>
+            <button class="predict-tab" id="tab-smiles"
+                    onclick="switchTab('smiles')">
+              <i data-lucide="test-tube" class="icon-sm"></i> Enter SMILES
+            </button>
+            <button class="predict-tab" id="tab-compare"
+                    onclick="switchTab('compare')">
+              <i data-lucide="scale" class="icon-sm"></i> Compare Drugs
+            </button>
+          </div>
+
+          <div id="tab-name-content" class="tab-content active">
+            <div class="predict-input-row">
+              <input
+                type="text"
+                id="drug-name-input"
+                class="predict-input"
+                placeholder="e.g. Estradiol, Thalidomide, Doxorubicin..."
+                onkeydown="if(event.key==='Enter') handlePredict()"
+              />
+              <button class="btn btn-primary" onclick="handlePredict()">
+                <i data-lucide="microscope" class="icon-inline"></i> Predict
+              </button>
+            </div>
+          </div>
+
+          <div id="tab-smiles-content" class="tab-content">
+            <div class="predict-input-row">
+              <input
+                type="text"
+                id="smiles-input"
+                class="predict-input"
+                placeholder="e.g. CC(=O)Oc1ccccc1C(=O)O"
+                onkeydown="if(event.key==='Enter') handlePredictSmiles()"
+              />
+              <button class="btn btn-primary" onclick="handlePredictSmiles()">
+                <i data-lucide="microscope" class="icon-inline"></i> Predict
+              </button>
+            </div>
+          </div>
+
+          <div id="tab-compare-content" class="tab-content">
+            <div class="predict-input-row">
+              <input
+                type="text"
+                id="compare-drug1-input"
+                class="predict-input"
+                placeholder="Drug 1 (e.g. Aspirin)"
+                onkeydown="if(event.key==='Enter') handleCompare()"
+              />
+              <span style="color:var(--text-muted); display:flex; align-items:center;">vs</span>
+              <input
+                type="text"
+                id="compare-drug2-input"
+                class="predict-input"
+                placeholder="Drug 2 (e.g. Thalidomide)"
+                onkeydown="if(event.key==='Enter') handleCompare()"
+              />
+              <button class="btn btn-primary" onclick="handleCompare()">
+                <i data-lucide="scale" class="icon-sm"></i> Compare
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick preset pills -->
+          <div class="quick-pills">
+            <span class="quick-label">Quick test:</span>
+            <button class="quick-pill"
+                    onclick="setDrug('Aspirin')"><i data-lucide="pill" class="icon-sm"></i> Aspirin</button>
+            <button class="quick-pill"
+                    onclick="setDrug('Estradiol')"><i data-lucide="flask-conical" class="icon-sm"></i> Estradiol</button>
+            <button class="quick-pill"
+                    onclick="setDrug('Caffeine')"><i data-lucide="coffee" class="icon-sm"></i> Caffeine</button>
+            <button class="quick-pill"
+                    onclick="setDrug('Testosterone')"><i data-lucide="activity" class="icon-sm"></i> Testosterone</button>
+            <button class="quick-pill"
+                    onclick="setDrug('Thalidomide')"><i data-lucide="skull" class="icon-sm"></i> Thalidomide</button>
+            <button class="quick-pill"
+                    onclick="setDrug('Doxorubicin')"><i data-lucide="skull" class="icon-sm"></i> Doxorubicin</button>
+          </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="predict-loading" class="predict-loading" style="display:none">
+          <div class="dna-helix">
+            <div class="dna-strand"></div>
+            <div class="dna-strand"></div>
+            <div class="dna-strand"></div>
+            <div class="dna-strand"></div>
+          </div>
+          <p>Analyzing molecular structure...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="predict-error" class="predict-error" style="display:none">
+          <span><i data-lucide="skull" style="width: 14px; height: 14px;"></i></span>
+          <span id="error-message">Something went wrong</span>
+        </div>
+
+        <!-- Results Area -->
+        <div id="predict-results" class="predict-results" style="display:none">
+
+          <!-- Risk Banner -->
+          <div id="risk-banner" class="risk-banner">
+            <span id="risk-label"><i data-lucide="skull" class="icon-inline"></i> HIGH RISK</span>
+            <span id="risk-score" class="risk-score">56.9%</span>
+            <span id="drug-name-display" class="drug-name-display"></span>
+          </div>
+
+          <!-- Main Results Grid -->
+          <div class="results-main-grid">
+
+            <!-- Left: Radar Chart -->
+            <div class="radar-section">
+              <h4>Toxicity Profile</h4>
+              <div class="radar-wrapper">
+                <canvas id="radar-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: Molecular Properties + ADMET -->
+            <div class="right-section">
+
+              <!-- Molecular Properties -->
+              <div class="props-card">
+                <h4>Molecular Properties</h4>
+                <div id="mol-props" class="props-grid"></div>
+              </div>
+
+              <!-- ADMET Profile -->
+              <div class="admet-result-card">
+                <h4>ADMET Safety Profile</h4>
+                <div id="admet-results"></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Per Assay Breakdown -->
+          <div class="assay-section">
+            <h4>Per-Assay Breakdown</h4>
+            <div id="assay-grid" class="assay-grid"></div>
+          </div>
+
+          <!-- Toxicophore Alerts -->
+          <div class="tox-section">
+            <h4><i data-lucide="search"></i> Toxicophore Analysis</h4>
+            <div id="toxicophore-results"></div>
+          </div>
+
+          <!-- Download Button -->
+          <div class="download-section">
+            <button class="btn btn-outline" onclick="downloadReport()">
+              <i data-lucide="download"></i> Download Full Report (CSV)
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Compare Results Area -->
+        <div id="compare-results" class="predict-results" style="display:none">
+          <!-- Dual Risk Banners -->
+          <div class="compare-risk-banners" style="display:flex; gap:24px; margin-bottom:24px; flex-wrap:wrap;">
+            <div id="compare-risk-banner-1" class="risk-banner" style="flex:1; margin-bottom:0; min-width: 250px;">
+              <span id="compare-risk-label-1"><i data-lucide="skull" class="icon-inline"></i> HIGH RISK</span>
+              <span id="compare-risk-score-1" class="risk-score"></span>
+              <span id="compare-drug-name-1" class="drug-name-display"></span>
+            </div>
+            <div id="compare-risk-banner-2" class="risk-banner" style="flex:1; margin-bottom:0; min-width: 250px;">
+              <span id="compare-risk-label-2"><i data-lucide="skull" class="icon-inline"></i> HIGH RISK</span>
+              <span id="compare-risk-score-2" class="risk-score"></span>
+              <span id="compare-drug-name-2" class="drug-name-display"></span>
+            </div>
+          </div>
+
+          <!-- Main Results Grid -->
+          <div class="results-main-grid">
+            <!-- Left: Radar Chart -->
+            <div class="radar-section">
+              <h4>Comparative Toxicity Profile</h4>
+              <div class="radar-wrapper">
+                <canvas id="compare-radar-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: Molecular Properties + ADMET -->
+            <div class="right-section">
+              <!-- Molecular Properties -->
+              <div class="props-card">
+                <h4>Molecular Properties Comparison</h4>
+                <div id="compare-mol-props" class="props-grid" style="grid-template-columns: 1fr; gap:0;"></div>
+              </div>
+
+              <!-- ADMET Profile -->
+              <div class="admet-result-card">
+                <h4>ADMET Safety Comparison</h4>
+                <div id="compare-admet-results"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Per Assay Breakdown -->
+          <div class="assay-section">
+             <h4>Per-Assay Breakdown Comparison</h4>
+             <div id="compare-assay-grid" class="assay-grid" style="grid-template-columns: 1fr;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- LIVE DEMO PREVIEW -->
+  <section id="demo" class="demo section">
+    <div class="container">
+      <h2 class="section-title">See It In Action</h2>
+      <div class="browser-mockup" id="browser-mockup">
+        <div class="browser-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="browser-url">toxpredict.streamlit.app</span></div>
+        <div class="browser-content">
+          <div class="mock-left"><div class="mock-molecule-placeholder"><div class="mock-hex"></div><div class="mock-hex"></div><div class="mock-hex"></div></div></div>
+          <div class="mock-right"><div class="mock-radar"><svg viewBox="0 0 200 200"><polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="var(--primary)" stroke-width="1" opacity="0.3"/><polygon points="100,50 150,75 150,125 100,150 50,125 50,75" fill="rgba(14,165,233,0.15)" stroke="var(--primary)" stroke-width="2"/></svg></div></div>
+        </div>
+        <div class="mock-alerts"><div class="mock-alert danger"><i data-lucide="skull" style="width: 14px; height: 14px;"></i> Nitro group detected</div><div class="mock-alert warning"><i data-lucide="skull" style="width: 14px; height: 14px;"></i> Aromatic amine detected</div></div>
+      </div>
+      <div class="demo-pills">
+        <div class="demo-pill safe" data-tooltip="Overall Risk: 14.4% — LOW RISK"><i data-lucide="pill" class="icon-sm"></i> Aspirin</div>
+        <div class="demo-pill danger" data-tooltip="Overall Risk: 56.9% — HIGH RISK · NR-ER: 95.9%"><i data-lucide="flask-conical" class="icon-sm"></i> Estradiol</div>
+        <div class="demo-pill safe" data-tooltip="Overall Risk: 18.2% — LOW RISK"><i data-lucide="coffee" class="icon-sm"></i> Caffeine</div>
+      </div>
+      <a href="#footer-cta" class="demo-link">Launch the full app to test any molecule <span class="bounce-arrow">→</span></a>
+    </div>
+  </section>
+
+  
+
+  <!-- RESULTS -->
+  <section id="results" class="results section">
+    <div class="container">
+      <h2 class="section-title">State-of-the-Art Performance</h2>
+      <p class="section-subtitle">9 of 12 toxicity targets exceed the 0.75 industry benchmark threshold</p>
+      <div class="chart-container" id="chart-container">
+        <div class="chart-bar" data-value="0.8966" data-label="SR-MMP" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8860" data-label="NR-AhR" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8791" data-label="NR-Aromatase" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8755" data-label="SR-ATAD5" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8699" data-label="SR-p53" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8176" data-label="SR-ARE" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8117" data-label="NR-ER-LBD" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.8112" data-label="NR-PPAR-γ" data-tier="cyan"></div>
+        <div class="chart-bar" data-value="0.7893" data-label="NR-AR-LBD" data-tier="green"></div>
+        <div class="chart-bar" data-value="0.7671" data-label="SR-HSE" data-tier="green"></div>
+        <div class="chart-bar" data-value="0.7626" data-label="NR-AR" data-tier="green"></div>
+        <div class="chart-bar" data-value="0.6968" data-label="NR-ER" data-tier="amber"></div>
+      </div>
+      <div class="benchmark-line"><span>0.75 Benchmark</span></div>
+      <div class="result-stats">
+        <div class="result-stat"><span class="rs-number" data-target="0.8966" data-decimals="4">0</span><span class="rs-label">Best AUC Score</span></div>
+        <div class="result-stat"><span class="rs-number" data-target="2200">0</span><span class="rs-label">Features Used</span></div>
+        <div class="result-stat"><span class="rs-number" data-target="7831">0</span><span class="rs-label">Molecules Trained</span></div>
+        <div class="result-stat"><span class="rs-number" data-target="3">0</span><span class="rs-label">Models in Ensemble</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECHNICAL DEEP DIVE -->
+  <section id="technical" class="technical section">
+    <div class="container">
+      <div class="tech-layout">
+        <div class="tech-content">
+          <h2 class="section-title left-align">Built Like a Real Pharmaceutical AI</h2>
+          <div class="accordion">
+            <div class="accordion-item">
+              <button class="accordion-header"><span>Feature Engineering</span><span class="accordion-icon">+</span></button>
+              <div class="accordion-body"><p>We extract three complementary types of molecular features:</p><ul><li><strong>Morgan Fingerprints (2048-bit):</strong> Encode the circular atomic neighborhood structure — the same approach used in production pharmaceutical AI</li><li><strong>MACCS Keys (166 features):</strong> 166 chemist-designed structural keys encoding specific molecular patterns</li><li><strong>Toxicophore Flags (10 features):</strong> Binary detection of 10 known toxic chemical substructures</li></ul><p><strong>Total: 2,224 features per molecule</strong></p></div>
+            </div>
+            <div class="accordion-item">
+              <button class="accordion-header"><span>Ensemble Model Architecture</span><span class="accordion-icon">+</span></button>
+              <div class="accordion-body"><div class="arch-diagram"><div class="arch-models"><div class="arch-box">XGBoost</div><div class="arch-box">Random Forest</div><div class="arch-box">Logistic Regression</div></div><div class="arch-arrow">▼</div><div class="arch-box vote-box">Soft Voting</div><div class="arch-arrow">▼</div><div class="arch-box result-box">Toxicity Probability</div></div><p>Soft voting combines probability outputs from all three models — this approach almost always outperforms any single model and is more robust to individual model weaknesses.</p></div>
+            </div>
+            <div class="accordion-item">
+              <button class="accordion-header"><span>Cross Validation</span><span class="accordion-icon">+</span></button>
+              <div class="accordion-body"><p>We use <strong>5-fold Stratified Cross Validation</strong> to ensure our metrics are reliable and not overfitted to a single train/test split. This is the standard validation approach in published pharmaceutical ML research.</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="tech-visual">
+          <div class="pipeline">
+            <div class="pipe-node">SMILES</div>
+            <div class="pipe-line"></div>
+            <div class="pipe-node">Features</div>
+            <div class="pipe-line"></div>
+            <div class="pipe-node">Models</div>
+            <div class="pipe-line"></div>
+            <div class="pipe-node glow">Prediction</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIMITATIONS -->
+  <section id="limitations" class="limitations section">
+    <div class="container">
+      <h2 class="section-title">What Our Model Measures — And What It Doesn't</h2>
+      <p class="section-subtitle amber">Scientific honesty is part of good science</p>
+      <div class="limits-grid">
+        <div class="limits-col green-col">
+          <h3><i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> What We Predict</h3>
+          <ul><li>Nuclear receptor disruption (NR-AR, NR-ER, etc.)</li><li>Cellular stress responses (SR-ARE, SR-HSE)</li><li>DNA damage signaling (SR-p53, SR-ATAD5)</li><li>Mitochondrial toxicity (SR-MMP)</li><li>Aryl hydrocarbon receptor activation (NR-AhR)</li></ul>
+        </div>
+        <div class="limits-col red-col">
+          <h3><i data-lucide="skull" style="width: 14px; height: 14px;"></i> Outside Our Scope</h3>
+          <ul><li>Addiction and opioid receptor binding</li><li>Chronic low-dose toxicity (e.g. benzene → leukemia)</li><li>Teratogenicity (e.g. thalidomide birth defects)</li><li>Neurotoxicity and CNS effects</li><li>Organ-specific long-term toxicity</li></ul>
+        </div>
+      </div>
+      <blockquote class="honesty-quote">"Heroin scores low on our model — not because it's safe, but because its danger comes from opioid receptor binding, which Tox21 doesn't measure. A complete drug safety system requires multiple complementary assay panels. This is a known limitation of all Tox21-based models."<cite>— ToxPredict Team</cite></blockquote>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section id="timeline" class="timeline section">
+    <div class="container">
+      <h2 class="section-title">Why This Matters — Real Drug Safety Failures</h2>
+      <div class="timeline-track">
+        <svg class="timeline-svg" id="timeline-svg"><line x1="0" y1="50%" x2="100%" y2="50%" stroke="var(--border)" stroke-width="2"/><line class="timeline-progress" x1="0" y1="50%" x2="100%" y2="50%" stroke="var(--primary)" stroke-width="2"/></svg>
+        <div class="timeline-events">
+          <div class="tl-event danger-event"><div class="tl-marker danger"></div><span class="tl-year">1957</span><h4>Thalidomide</h4><p>Prescribed to pregnant women for morning sickness — caused 10,000+ birth defects worldwide. Teratogenicity was not tested.</p></div>
+          <div class="tl-event danger-event"><div class="tl-marker danger"></div><span class="tl-year">1997</span><h4>Fen-Phen</h4><p>Weight loss drug withdrawn after causing fatal heart valve damage in thousands of patients.</p></div>
+          <div class="tl-event danger-event"><div class="tl-marker danger"></div><span class="tl-year">2004</span><h4>Vioxx</h4><p>Painkiller withdrawn — linked to 60,000+ cardiac deaths. Cardiovascular risk missed in trials.</p></div>
+          <div class="tl-event future-event"><div class="tl-marker future"></div><span class="tl-year">Future</span><h4>AI Prevention</h4><p>AI toxicity screening like ToxPredict catches cellular danger signals before compounds reach human trials.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT / TEAM -->
+  <section id="about" class="about section">
+    <div class="container">
+      <h2 class="section-title">Built at CodeCure · IIT BHU Biohackathon</h2>
+      <div class="hackathon-badge"><div class="badge-logo">🧬</div><div class="badge-info"><strong>Track A — Drug Toxicity Prediction</strong><span>Organized by IIT BHU</span></div></div>
+      <div class="team-card">
+        <div class="avatar"><span>DB</span></div>
+        <h3>Dhruv Bajpai</h3>
+        <p>AI/ML Developer · CodeCure Biohackathon 2025</p>
+        <a href="https://github.com/bajpaidhruv2018" target="_blank" class="github-link"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg> bajpaidhruv2018</a>
+      </div>
+      <div class="tech-pills">
+        <span class="tech-pill">Python</span><span class="tech-pill">XGBoost</span><span class="tech-pill">RDKit</span><span class="tech-pill">SHAP</span><span class="tech-pill">Streamlit</span><span class="tech-pill">Scikit-learn</span><span class="tech-pill">Plotly</span><span class="tech-pill">3Dmol.js</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER CTA -->
+  <section id="footer-cta" class="footer-cta section">
+    <div class="container">
+      <h2 class="footer-heading">Ready to Screen Your Molecule?</h2>
+      <p class="footer-sub">Join researchers using AI to make drug discovery safer</p>
+      <div class="footer-buttons">
+        <a href="#predict" class="btn btn-primary btn-lg"><i data-lucide="microscope" class="icon-inline"></i> Try ToxPredict Live</a>
+        <a href="https://github.com/bajpaidhruv2018" target="_blank" class="btn btn-outline btn-lg">View Source on GitHub →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-logo"><i data-lucide="dna" class="icon-inline"></i> ToxPredict</span>
+      <span class="footer-center">Built for CodeCure Biohackathon · IIT BHU</span>
+      <span class="footer-right">© 2025 Dhruv Bajpai</span>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
