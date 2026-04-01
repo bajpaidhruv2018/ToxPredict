@@ -544,7 +544,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 // Change this URL after you deploy to Render
 // For local testing: "http://localhost:8000"
 // After deploying: "https://toxpredict-api.onrender.com"
-const API_URL = "https://toxpredict-api.onrender.com";
+const API_URL = "https://toxpredict-xao3.onrender.com";
 
 // Keep API alive (prevents Render free tier sleep)
 setInterval(() => {
