@@ -1,18 +1,20 @@
 # 🧬 ToxPredict — AI-Powered Drug Toxicity Predictor
 
 <div align="center">
-
 ![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red?style=for-the-badge&logo=streamlit)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel)
 ![XGBoost](https://img.shields.io/badge/XGBoost-Ensemble-green?style=for-the-badge)
 ![PyTorch](https://img.shields.io/badge/PyTorch-MTL-EE4C2C?style=for-the-badge&logo=pytorch)
 ![RDKit](https://img.shields.io/badge/RDKit-Cheminformatics-orange?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
 **CodeCure Biohackathon | Track A — Drug Toxicity Prediction**
 **Organized by IIT BHU**
 
 *Predict drug toxicity across 12 biological targets in milliseconds using AI and molecular cheminformatics.*
+
+### 🚀 [Try the Live Prediction App](https://tox-predict.vercel.app/) 🚀
+*(Backend hosted on Render. Allow 30-50s for cold start on first request)*
 
 </div>
 
@@ -215,11 +217,13 @@ The Tox21 dataset is heavily imbalanced (far more non-toxic than toxic compounds
 ### Cheminformatics
 - `RDKit` — Molecular processing, descriptor calculation, Morgan fingerprints, 3D coordinate generation
 
-### Visualization
-- `Streamlit` — Web application framework
-- `Plotly` — Interactive radar charts
-- `3Dmol.js` — 3D molecular viewer (WebGL)
-- `Matplotlib` / `Seaborn` — Static plots
+### Web Application & API
+- `FastAPI` — High-performance REST API serving models
+- `HTML5 / CSS3 / Vanilla JS` — Fully custom frontend architecture
+- `GSAP` & `Lenis` — Smooth scrolling and complex UI animations
+- `Three.js` — Interactive 3D molecular background visualization
+- `Plotly` — Radar charts for toxicity profiles
+- `Matplotlib` / `Seaborn` — Static plots for reports
 
 ### Data
 - `Pandas` / `NumPy` — Data processing
@@ -264,8 +268,17 @@ CodeCure/
 │   ├── 04_shap_summary.png         # SHAP feature importance
 │   └── 05_real_drug_predictions.png # Validation on FDA drugs
 │
+├── api/
+│   ├── main.py                      # FastAPI backend service
+│   └── requirements.txt             # API dependencies
+│
+├── website/
+│   ├── index.html                   # HTML frontend interface
+│   ├── styles.css                   # Custom styling and responsive design
+│   └── script.js                    # Web integrations (GSAP, ThreeJS, API client)
+│
 ├── app/
-│   └── app.py                       # Streamlit web application
+│   └── app.py                       # Legacy Streamlit prototype
 │
 ├── requirements.txt
 └── README.md
@@ -327,18 +340,31 @@ python src/05_nn_multitask.py
 
 # Step 7: Generate visualizations
 python src/04_visualize.py
-
-# Step 7: Launch app
-streamlit run app/app.py
 ```
 
-### Launch App Only (models already trained)
-```bash
-conda activate codecure
-streamlit run app/app.py
-```
+### Run Web Application Locally (Frontend + Backend)
+To run the decoupled architecture locally:
 
-App opens at `http://localhost:8501`
+1. **Start the API Backend:**
+   ```bash
+   conda activate codecure
+   cd api
+   uvicorn main:app --reload
+   ```
+   *The API will start at `http://localhost:8000`*
+
+2. **Start the Frontend:**
+   Navigate into the `website/` directory and open `index.html` in your browser. For the best experience without CORS issues locally, use a local server like `npx serve` or VS Code Live Server.
+
+---
+
+## 🌍 Deployment Architecture
+
+ToxPredict is fully deployed with a decoupled modern web architecture:
+
+- **Frontend (Static Site):** Deployed globally on [**Vercel**](https://tox-predict.vercel.app/) for ultra-fast CDN delivery.
+- **Backend (REST API):** Deployed on **Render** using FastAPI. The service loads the 12 ensemble models into memory and serves the HTTP endpoints. 
+  *(Note: The Render free tier spins down the backend after 15 minutes of inactivity; initial predictions may take 30-50 seconds to wake the server.)*
 
 ---
 
